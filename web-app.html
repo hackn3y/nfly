@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Predictor - Mobile App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #16213e;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
+            padding: 40px 30px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+        }
+        .welcome-header {
+            text-align: center;
+            margin-top: 60px;
+        }
+        .welcome-logo {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+        .welcome-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00D9FF;
+            margin-bottom: 10px;
+        }
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #a0a0a0;
+        }
+        .features {
+            margin: 40px 0;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .feature-text h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .feature-text p {
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+        .welcome-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .btn {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #00D9FF;
+            color: #1a1a2e;
+        }
+        .btn-primary:hover {
+            background: #00c0e6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.4);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #00D9FF;
+            border: 2px solid #00D9FF;
+        }
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        /* Auth Screens */
+        .auth-screen {
+            padding: 40px 30px;
+            display: none;
+        }
+        .auth-screen.active {
+            display: block;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            color: #00D9FF;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .auth-header {
+            margin-bottom: 40px;
+        }
+        .auth-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .auth-subtitle {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #0F3460;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 15px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00D9FF;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-top: 4px;
+        }
+        .checkbox-group label {
+            margin: 0;
+            font-size: 13px;
+        }
+        .error {
+            color: #ff4757;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .success {
+            color: #2ed573;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        /* Main App */
+        .main-app {
+            display: none;
+            min-height: 100vh;
+        }
+        .main-app.active {
+            display: flex;
+            flex-direction: column;
+        }
+        .app-header {
+            background: #0F3460;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .app-header h1 {
+            font-size: 20px;
+            color: #00D9FF;
+        }
+        .app-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .bottom-nav {
+            display: flex;
+            background: #0F3460;
+            border-top: 1px solid rgba(0, 217, 255, 0.2);
+        }
+        .nav-item {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: none;
+            background: transparent;
+            color: #a0a0a0;
+        }
+        .nav-item.active {
+            color: #00D9FF;
+            background: rgba(0, 217, 255, 0.1);
+        }
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-label {
+            font-size: 11px;
+        }
+
+        /* Dashboard Cards */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #0F3460;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00D9FF;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00D9FF;
+        }
+        .card {
+            background: #0F3460;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .card p {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        /* Gematria */
+        .cipher-methods {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .cipher-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #0F3460;
+            border: 2px solid #0F3460;
+            color: #a0a0a0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cipher-chip.selected {
+            background: #00D9FF;
+            border-color: #00D9FF;
+            color: #1a1a2e;
+        }
+        .result-card {
+            background: #0F3460;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .result-item {
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-method {
+            font-size: 14px;
+            color: #00D9FF;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .result-values {
+            display: flex;
+            gap: 30px;
+        }
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .result-label {
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-top: 4px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #00D9FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="welcome-screen">
+            <div>
+                <div class="welcome-header">
+                    <div class="welcome-logo">🏈</div>
+                    <h1 class="welcome-title">NFL Predictor</h1>
+                    <p class="welcome-subtitle">AI-Powered Predictions & Gematria Analysis</p>
+                </div>
+
+                <div class="features">
+                    <div class="feature-item">
+                        <div class="feature-icon">🤖</div>
+                        <div class="feature-text">
+                            <h3>AI Predictions</h3>
+                            <p>Machine learning powered game predictions</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔢</div>
+                        <div class="feature-text">
+                            <h3>Gematria Analysis</h3>
+                            <p>Decode hidden patterns in team names</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-text">
+                            <h3>Live Stats</h3>
+                            <p>Real-time game data and insights</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">💎</div>
+                        <div class="feature-text">
+                            <h3>Premium Features</h3>
+                            <p>Unlock advanced predictions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-buttons">
+                <button class="btn btn-primary" onclick="showRegister()">Get Started</button>
+                <button class="btn btn-secondary" onclick="showLogin()">Sign In</button>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="auth-screen">
+            <button class="back-button" onclick="showWelcome()">← Back</button>
+            <div class="auth-header">
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to continue</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" value="test@nflpredictor.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" value="password123" required>
+                </div>
+                <div id="login-error" class="error" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:20px;">Sign In</button>
+            </form>
+        </div>
+
+        <!-- Register Screen -->
+        <div id="register-screen" class="auth-screen">
+            <button class="back-button" onclick="showWelcome()">← Back</button>
+            <div class="auth-header">
+                <h2 class="auth-title">Create Account</h2>
+                <p class="auth-subtitle">Join thousands of winning predictors</p>
+            </div>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" id="reg-firstname" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" id="reg-lastname" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" required>
+                </div>
+                <div class="form-group">
+                    <label>Birthdate (Must be 21+)</label>
+                    <input type="date" id="reg-birthdate" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reg-terms" required>
+                    <label>I agree to the Terms of Service and Privacy Policy</label>
+                </div>
+                <div id="register-error" class="error" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Account</button>
+            </form>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="main-app">
+            <div class="app-header">
+                <h1>NFL Predictor</h1>
+            </div>
+
+            <div class="app-content">
+                <!-- Home Tab -->
+                <div id="home-tab" class="tab-content active">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="active-predictions">0</div>
+                            <div class="stat-label">Active Predictions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="success-rate">0%</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="premium-insights">0</div>
+                            <div class="stat-label">Premium Insights</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="user-tier">Free</div>
+                            <div class="stat-label">Subscription</div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Featured Predictions</h3>
+                    <div id="featured-predictions">
+                        <div class="card">
+                            <h3>Loading predictions...</h3>
+                            <p>Fetching upcoming games</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predictions Tab -->
+                <div id="predictions-tab" class="tab-content">
+                    <h3 class="section-title">Upcoming Games</h3>
+                    <button class="btn btn-primary" onclick="loadPredictions()" style="margin-bottom:20px;">Get Latest Predictions</button>
+                    <div id="predictions-list">
+                        <div class="card">
+                            <h3>No predictions loaded</h3>
+                            <p>Click the button above to fetch predictions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gematria Tab -->
+                <div id="gematria-tab" class="tab-content">
+                    <h3 class="section-title">Gematria Calculator</h3>
+                    <div class="form-group">
+                        <label>Enter Text</label>
+                        <input type="text" id="gematria-input" placeholder="Kansas City Chiefs" value="Kansas City Chiefs">
+                    </div>
+                    <div class="form-group">
+                        <label>Cipher Methods</label>
+                        <div class="cipher-methods">
+                            <div class="cipher-chip selected" data-method="english" onclick="toggleCipher(this)">English</div>
+                            <div class="cipher-chip selected" data-method="pythagorean" onclick="toggleCipher(this)">Pythagorean</div>
+                            <div class="cipher-chip selected" data-method="chaldean" onclick="toggleCipher(this)">Chaldean</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="calculateGematria()">Calculate</button>
+                    <div id="gematria-results"></div>
+                </div>
+
+                <!-- Profile Tab -->
+                <div id="profile-tab" class="tab-content">
+                    <h3 class="section-title">Profile</h3>
+                    <div class="card">
+                        <h3 id="profile-name">Loading...</h3>
+                        <p id="profile-email"></p>
+                        <p>Subscription: <span id="profile-tier"></span></p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="logout()" style="margin-top:20px;">Logout</button>
+                </div>
+            </div>
+
+            <div class="bottom-nav">
+                <button class="nav-item active" onclick="switchTab('home')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Home</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('predictions')">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Predictions</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('gematria')">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-label">Gematria</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('profile')">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Profile</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let authToken = '';
+        let userData = null;
+
+        // Screen Navigation
+        function showWelcome() {
+            document.getElementById('welcome-screen').style.display = 'flex';
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('register-screen').classList.remove('active');
+        }
+
+        function showLogin() {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('login-screen').classList.add('active');
+        }
+
+        function showRegister() {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('register-screen').classList.add('active');
+        }
+
+        function showMainApp() {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('register-screen').classList.remove('active');
+            document.getElementById('main-app').classList.add('active');
+            loadUserData();
+            loadDashboardStats();
+        }
+
+        // Auth Functions
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    authToken = data.data.token;
+                    userData = data.data.user;
+                    showMainApp();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const errorDiv = document.getElementById('register-error');
+
+            const data = {
+                firstName: document.getElementById('reg-firstname').value,
+                lastName: document.getElementById('reg-lastname').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                dateOfBirth: document.getElementById('reg-birthdate').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    authToken = result.data.token;
+                    userData = result.data.user;
+                    showMainApp();
+                } else {
+                    errorDiv.textContent = result.error || 'Registration failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            authToken = '';
+            userData = null;
+            document.getElementById('main-app').classList.remove('active');
+            showWelcome();
+        }
+
+        // Tab Navigation
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+
+            if (tab === 'predictions') {
+                loadPredictions();
+            }
+        }
+
+        // Data Loading
+        function loadUserData() {
+            if (userData) {
+                document.getElementById('profile-name').textContent = `${userData.firstName} ${userData.lastName}`;
+                document.getElementById('profile-email').textContent = userData.email;
+                document.getElementById('profile-tier').textContent = userData.subscriptionTier;
+                document.getElementById('user-tier').textContent = userData.subscriptionTier;
+            }
+        }
+
+        function loadDashboardStats() {
+            // Mock stats - in real app would fetch from API
+            document.getElementById('active-predictions').textContent = '3';
+            document.getElementById('success-rate').textContent = '67%';
+            document.getElementById('premium-insights').textContent = '12';
+        }
+
+        async function loadPredictions() {
+            const container = document.getElementById('predictions-list');
+            container.innerHTML = '<div class="loading">Loading predictions...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/predictions/upcoming`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    container.innerHTML = data.data.map(pred => `
+                        <div class="card">
+                            <h3>${pred.homeTeam} vs ${pred.awayTeam}</h3>
+                            <p>Prediction: ${pred.predictedWinner}</p>
+                            <p>Confidence: ${pred.confidence}%</p>
+                            <p>Date: ${new Date(pred.gameDate).toLocaleDateString()}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="card"><h3>No predictions available</h3></div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="card"><h3>Error loading predictions</h3></div>';
+            }
+        }
+
+        // Gematria
+        function toggleCipher(element) {
+            element.classList.toggle('selected');
+        }
+
+        async function calculateGematria() {
+            const text = document.getElementById('gematria-input').value;
+            const methods = Array.from(document.querySelectorAll('.cipher-chip.selected'))
+                .map(chip => chip.dataset.method);
+
+            if (!text || methods.length === 0) {
+                alert('Please enter text and select at least one method');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('gematria-results');
+            resultsDiv.innerHTML = '<div class="loading">Calculating...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/gematria/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ text, methods })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '<div class="result-card">';
+                    html += `<h3>Results for: "${data.data.text}"</h3>`;
+
+                    for (const [method, values] of Object.entries(data.data.results)) {
+                        html += `
+                            <div class="result-item">
+                                <div class="result-method">${method}</div>
+                                <div class="result-values">
+                                    <div>
+                                        <div class="result-value">${values.value}</div>
+                                        <div class="result-label">Full Value</div>
+                                    </div>
+                                    <div>
+                                        <div class="result-value">${values.reduced}</div>
+                                        <div class="result-label">Reduced</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="card"><h3>Calculation failed</h3></div>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="card"><h3>Error calculating gematria</h3></div>';
+            }
+        }
+    </script>
+</body>
+</html>

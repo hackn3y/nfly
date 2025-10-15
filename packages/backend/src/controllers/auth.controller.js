@@ -1,0 +1,248 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
+const { getPostgresPool } = require('../config/database');
+const { AppError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
+
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  });
+};
+
+// Register new user
+exports.register = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, firstName, lastName, dateOfBirth } = req.body;
+    const pool = getPostgresPool();
+
+    // Check if user exists
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return next(new AppError('Email already registered', 400));
+    }
+
+    // Verify age (must be 21+)
+    const age = Math.floor((new Date() - new Date(dateOfBirth)) / 31557600000);
+    if (age < 21) {
+      return next(new AppError('You must be 21 or older to use this service', 400));
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Create user
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, date_of_birth, subscription_tier)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, email, first_name, last_name, subscription_tier, created_at`,
+      [email, passwordHash, firstName, lastName, dateOfBirth, 'free']
+    );
+
+    const user = result.rows[0];
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    logger.info(`New user registered: ${email}`);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          subscriptionTier: user.subscription_tier
+        },
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Login user
+exports.login = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password } = req.body;
+    const pool = getPostgresPool();
+
+    // Get user
+    const result = await pool.query(
+      `SELECT id, email, password_hash, first_name, last_name, subscription_tier, is_active
+       FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return next(new AppError('Invalid credentials', 401));
+    }
+
+    const user = result.rows[0];
+
+    if (!user.is_active) {
+      return next(new AppError('Account is inactive', 401));
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return next(new AppError('Invalid credentials', 401));
+    }
+
+    // Update last login
+    await pool.query(
+      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      [user.id]
+    );
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    logger.info(`User logged in: ${email}`);
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          subscriptionTier: user.subscription_tier
+        },
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get current user
+exports.getCurrentUser = async (req, res, next) => {
+  try {
+    const pool = getPostgresPool();
+    const result = await pool.query(
+      `SELECT id, email, first_name, last_name, subscription_tier, created_at, last_login
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return next(new AppError('User not found', 404));
+    }
+
+    const user = result.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        subscriptionTier: user.subscription_tier,
+        createdAt: user.created_at,
+        lastLogin: user.last_login
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Refresh token
+exports.refreshToken = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return next(new AppError('Token required', 400));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const newToken = generateToken(decoded.id);
+
+    res.json({
+      success: true,
+      data: { token: newToken }
+    });
+  } catch (error) {
+    next(new AppError('Invalid or expired token', 401));
+  }
+};
+
+// Logout
+exports.logout = async (req, res) => {
+  // Token invalidation would be handled client-side
+  // For server-side, you could maintain a blacklist in Redis
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+};
+
+// Forgot password (placeholder - would send email in production)
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const pool = getPostgresPool();
+
+    const result = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      // Don't reveal if email exists
+      return res.json({
+        success: true,
+        message: 'If that email exists, a password reset link has been sent'
+      });
+    }
+
+    // TODO: Generate reset token and send email
+    logger.info(`Password reset requested for: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'If that email exists, a password reset link has been sent'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reset password (placeholder)
+exports.resetPassword = async (req, res, next) => {
+  try {
+    // TODO: Implement password reset logic
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};

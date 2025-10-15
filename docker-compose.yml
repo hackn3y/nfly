@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nfl-postgres
+    environment:
+      POSTGRES_USER: nfluser
+      POSTGRES_PASSWORD: nflpass123
+      POSTGRES_DB: nfl_predictor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - nfl-network
+
+  mongodb:
+    image: mongo:7
+    container_name: nfl-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: nfl_gematria
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - nfl-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: nfl-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - nfl-network
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: nfl-backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://nfluser:nflpass123@postgres:5432/nfl_predictor
+      MONGODB_URI: mongodb://nfluser:nflpass123@mongodb:27017/nfl_gematria
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      ML_SERVICE_URL: http://ml-service:5000
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    networks:
+      - nfl-network
+    command: npm run dev
+
+  ml-service:
+    build:
+      context: ./packages/ml-service
+      dockerfile: Dockerfile
+    container_name: nfl-ml-service
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://nfluser:nflpass123@postgres:5432/nfl_predictor
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./packages/ml-service:/app
+      - ./packages/ml-service/models:/app/models
+    networks:
+      - nfl-network
+    command: python app.py
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  nfl-network:
+    driver: bridge
