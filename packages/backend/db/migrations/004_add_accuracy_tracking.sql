@@ -3,6 +3,8 @@ ALTER TABLE predictions ADD COLUMN IF NOT EXISTS result VARCHAR(20);
 ALTER TABLE predictions ADD COLUMN IF NOT EXISTS is_correct BOOLEAN;
 ALTER TABLE predictions ADD COLUMN IF NOT EXISTS actual_winner INTEGER REFERENCES teams(id);
 ALTER TABLE predictions ADD COLUMN IF NOT EXISTS actual_margin INTEGER;
+ALTER TABLE predictions ADD COLUMN IF NOT EXISTS prediction_type VARCHAR(50) DEFAULT 'spread';
+ALTER TABLE predictions ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(5,4);
 
 -- Add accuracy stats to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS total_predictions INTEGER DEFAULT 0;
