@@ -11,9 +11,9 @@
 
 ### 🚀 Backend Services
 ```
-✅ Backend API  - http://localhost:3000
+✅ Backend API  - http://localhost:4100
 ✅ ML Service   - http://localhost:5000
-✅ Mobile App   - http://localhost:8081
+✅ Mobile App   - http://localhost:8100
 ```
 
 ---
@@ -28,12 +28,12 @@ http://localhost:5000/docs
 
 ### 2. Backend Health Check
 ```
-http://localhost:3000/health
+http://localhost:4100/health
 ```
 
 ### 3. Mobile App (Expo DevTools)
 ```
-http://localhost:8081
+http://localhost:8100
 ```
 This should already be open! If not, navigate to it.
 
@@ -63,23 +63,23 @@ Use these to login to the mobile app!
 ```powershell
 # First login to get token
 $body = @{email="test@nflpredictor.com";password="password123"} | ConvertTo-Json
-$response = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/login" -Method POST -Body $body -ContentType "application/json"
+$response = Invoke-RestMethod -Uri "http://localhost:4100/api/auth/login" -Method POST -Body $body -ContentType "application/json"
 $token = $response.data.token
 
 # Calculate gematria
 $gBody = @{text="Kansas City Chiefs";methods=@("english","pythagorean","chaldean")} | ConvertTo-Json
-Invoke-RestMethod -Uri "http://localhost:3000/api/gematria/calculate" -Method POST -Body $gBody -ContentType "application/json" -Headers @{Authorization="Bearer $token"}
+Invoke-RestMethod -Uri "http://localhost:4100/api/gematria/calculate" -Method POST -Body $gBody -ContentType "application/json" -Headers @{Authorization="Bearer $token"}
 ```
 
 ### Test with curl (Git Bash)
 ```bash
 # Login
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:4100/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@nflpredictor.com","password":"password123"}'
 
 # Save the token, then:
-curl -X POST http://localhost:3000/api/gematria/calculate \
+curl -X POST http://localhost:4100/api/gematria/calculate \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"text":"Buffalo Bills","methods":["english"]}'
@@ -275,13 +275,13 @@ docker exec -it nfl-redis redis-cli
 ```
 ┌─────────────┐
 │ Mobile App  │ ← React Native (Expo)
-│ (Port 8081) │
+│ (Port 8100) │
 └──────┬──────┘
        │ HTTP/REST
        ▼
 ┌─────────────┐     ┌──────────────┐
 │ Backend API │────→│  ML Service  │
-│ (Port 3000) │     │ (Port 5000)  │
+│ (Port 4100) │     │ (Port 5000)  │
 └──────┬──────┘     └──────────────┘
        │
        ▼
@@ -341,10 +341,10 @@ All the documentation you need:
 ## 🏈 Ready to Predict Some Games!
 
 **Your URLs:**
-- Mobile App: http://localhost:8081
-- Backend API: http://localhost:3000/api
+- Mobile App: http://localhost:8100
+- Backend API: http://localhost:4100/api
 - ML API Docs: http://localhost:5000/docs
-- Health Check: http://localhost:3000/health
+- Health Check: http://localhost:4100/health
 
 **Your Login:**
 - Email: test@nflpredictor.com

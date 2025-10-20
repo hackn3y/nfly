@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
+import { Platform } from 'react-native';
 
 import { loadToken } from '../store/slices/authSlice';
 import AuthNavigator from './AuthNavigator';
@@ -28,9 +29,24 @@ export default function AppNavigator() {
     );
   }
 
+  // On web, bypass Stack Navigator entirely to avoid animation issues
+  if (Platform.OS === 'web') {
+    return (
+      <NavigationContainer>
+        <View style={{ flex: 1 }}>
+          {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+        </View>
+      </NavigationContainer>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+        }}
+      >
         {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainNavigator} />
         ) : (

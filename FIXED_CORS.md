@@ -27,7 +27,7 @@ The backend has been updated to allow requests from any origin in development mo
 
 Changed CORS from:
 ```javascript
-origin: ['http://localhost:3000', 'http://localhost:8081']
+origin: ['http://localhost:4100', 'http://localhost:8100']
 ```
 
 To:
@@ -41,7 +41,7 @@ This allows your local HTML file to connect to the API!
 
 ## Backend is Running:
 ✅ Status: HEALTHY
-✅ Port: 3000
+✅ Port: 4100
 ✅ CORS: Enabled for all origins
 
 **Refresh test-app.html and try logging in!** 🚀

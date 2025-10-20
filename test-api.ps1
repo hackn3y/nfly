@@ -6,7 +6,7 @@ Write-Host ""
 # Test 1: Health Check
 Write-Host "1. Testing Backend Health..." -ForegroundColor Yellow
 try {
-    $health = Invoke-RestMethod -Uri "http://localhost:3000/health" -Method GET
+    $health = Invoke-RestMethod -Uri "http://localhost:4100/health" -Method GET
     Write-Host "   ✅ Backend is healthy!" -ForegroundColor Green
     Write-Host "   Uptime: $($health.uptime) seconds" -ForegroundColor Cyan
 } catch {
@@ -27,7 +27,7 @@ $registerBody = @{
 } | ConvertTo-Json
 
 try {
-    $registerResponse = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/register" -Method POST -Body $registerBody -ContentType "application/json"
+    $registerResponse = Invoke-RestMethod -Uri "http://localhost:4100/api/auth/register" -Method POST -Body $registerBody -ContentType "application/json"
     Write-Host "   ✅ User registered successfully!" -ForegroundColor Green
     Write-Host "   User ID: $($registerResponse.data.user.id)" -ForegroundColor Cyan
     Write-Host "   Email: $($registerResponse.data.user.email)" -ForegroundColor Cyan
@@ -44,7 +44,7 @@ try {
             password = "password123"
         } | ConvertTo-Json
 
-        $loginResponse = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/login" -Method POST -Body $loginBody -ContentType "application/json"
+    $loginResponse = Invoke-RestMethod -Uri "http://localhost:4100/api/auth/login" -Method POST -Body $loginBody -ContentType "application/json"
         Write-Host "   ✅ Logged in successfully!" -ForegroundColor Green
         $token = $loginResponse.data.token
         Write-Host "   Token: $($token.Substring(0, 20))..." -ForegroundColor Cyan
@@ -63,7 +63,7 @@ $headers = @{
 }
 
 try {
-    $predictions = Invoke-RestMethod -Uri "http://localhost:3000/api/predictions/upcoming" -Method GET -Headers $headers
+    $predictions = Invoke-RestMethod -Uri "http://localhost:4100/api/predictions/upcoming" -Method GET -Headers $headers
     Write-Host "   ✅ Predictions retrieved!" -ForegroundColor Green
     if ($predictions.data) {
         Write-Host "   Found $($predictions.data.Count) upcoming games" -ForegroundColor Cyan
@@ -84,7 +84,7 @@ $gematriaBody = @{
 } | ConvertTo-Json
 
 try {
-    $gematria = Invoke-RestMethod -Uri "http://localhost:3000/api/gematria/calculate" -Method POST -Body $gematriaBody -ContentType "application/json" -Headers $headers
+    $gematria = Invoke-RestMethod -Uri "http://localhost:4100/api/gematria/calculate" -Method POST -Body $gematriaBody -ContentType "application/json" -Headers $headers
     Write-Host "   ✅ Gematria calculated!" -ForegroundColor Green
     Write-Host "   Text: '$($gematria.data.text)'" -ForegroundColor Cyan
     Write-Host "   English: $($gematria.data.results.english.value) (reduced: $($gematria.data.results.english.reduced))" -ForegroundColor Cyan
@@ -99,7 +99,7 @@ Write-Host ""
 # Test 5: Get Subscription Tiers
 Write-Host "5. Getting Subscription Tiers..." -ForegroundColor Yellow
 try {
-    $tiers = Invoke-RestMethod -Uri "http://localhost:3000/api/subscriptions/tiers" -Method GET
+    $tiers = Invoke-RestMethod -Uri "http://localhost:4100/api/subscriptions/tiers" -Method GET
     Write-Host "   ✅ Subscription tiers retrieved!" -ForegroundColor Green
     Write-Host "   Available tiers:" -ForegroundColor Cyan
     foreach ($tier in $tiers.data.PSObject.Properties) {
@@ -113,7 +113,7 @@ Write-Host ""
 Write-Host "=== Test Complete! ===" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Open http://localhost:3000/api in your browser" -ForegroundColor White
+Write-Host "  1. Open http://localhost:4100/api in your browser" -ForegroundColor White
 Write-Host "  2. Open http://localhost:5000/docs for ML API docs" -ForegroundColor White
 Write-Host "  3. Wait for mobile app to finish installing" -ForegroundColor White
 Write-Host ""

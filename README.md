@@ -1,140 +1,204 @@
-# NFL Predictor App
+# NFL Predictor 🏈
 
-A modern NFL game prediction platform combining machine learning models with gematria-based analysis.
+AI-powered NFL game predictions combining machine learning models with gematria analysis. Built with React Native, Node.js, Python, and multiple ML models.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-18%2B-brightgreen)](https://nodejs.org/)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://python.org/)
 
-- **Machine Learning Predictions**: Advanced ML models (Random Forest, XGBoost, Neural Networks)
-- **Gematria Analysis**: Multiple calculation methods for numerological insights
-- **Real-time Updates**: Live injury news, weather, and line movements
-- **Betting Tools**: Parlay optimizer, bankroll management, odds comparison
-- **Mobile First**: React Native app for iOS and Android
-- **Premium Tiers**: Free, Premium ($9.99/mo), and Pro ($29.99/mo) subscriptions
+## 📱 Features
 
-## Tech Stack
+### Core Predictions
+- **Multi-Model ML Predictions** - Ensemble of Random Forest, XGBoost, and Neural Networks
+- **Gematria Analysis** - Numerological insights using multiple cipher systems
+- **Confidence Scoring** - Transparent confidence levels for each prediction
+- **Game Analysis** - Detailed breakdowns with key factors
 
-### Frontend
-- React Native (mobile)
-- Redux (state management)
-- React Navigation
-- Victory Native (charts)
+### User Features
+- **Subscription Tiers** - Free, Starter ($9.99), Premium ($19.99), Pro ($49.99)
+- **Prediction History** - Track your prediction accuracy over time
+- **Statistics Dashboard** - Detailed performance metrics
+- **Favorite Teams** - Personalized predictions for your teams
+- **Profile Management** - Edit preferences and settings
 
-### Backend
-- Node.js + Express.js (API layer)
-- Python + FastAPI (ML service)
-- PostgreSQL (structured data)
-- MongoDB (gematria calculations)
-- Redis (caching)
+### Advanced Features
+- **Daily Prediction Limits** - Tier-based access control
+- **Parlay Optimizer** - Optimize multi-game bets (Pro tier)
+- **Historical Trends** - Season-long prediction tracking
+- **API Access** - Premium+ programmatic access
 
-### ML/AI
-- scikit-learn
-- XGBoost
-- TensorFlow/PyTorch
-- Pandas, NumPy
-
-## Project Structure
-
-```
-nfly/
-├── packages/
-│   ├── mobile/          # React Native app
-│   ├── backend/         # Node.js API server
-│   └── ml-service/      # Python ML service
-├── docker-compose.yml   # Local development environment
-└── package.json         # Root package file
-```
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.10+
-- Docker & Docker Compose
-- React Native CLI
-- iOS Simulator (Mac) or Android Studio
 
-### Installation
+- **Node.js 18+** and npm
+- **Python 3.10+** and pip
+- **Docker** and Docker Compose
+- **PostgreSQL 15+**
+- **MongoDB 7+**
+- **Redis 7+**
 
-1. **Clone and install dependencies**
+### 1. Clone and Install
+
 ```bash
+# Clone repository
+git clone https://github.com/yourorg/nfl-predictor.git
+cd nfl-predictor
+
+# Install all dependencies
 npm run install:all
 ```
 
-2. **Start databases with Docker**
+### 2. Start Databases
+
 ```bash
+# Start PostgreSQL, MongoDB, Redis with Docker
 npm run docker:up
+
+# Or use the batch file on Windows
+start-all.bat
 ```
 
-3. **Start backend services**
-```bash
-# Terminal 1 - Node.js API
-npm run dev:backend
+### 3. Configure Environment
 
-# Terminal 2 - Python ML service
-npm run dev:ml
+Create environment files:
 
-# Terminal 3 - Mobile app
-npm run dev:mobile
-```
-
-### Environment Variables
-
-Create `.env` files in each package:
-
-**packages/backend/.env**
-```
-DATABASE_URL=postgresql://nfluser:nflpass123@localhost:5432/nfl_predictor
-MONGODB_URI=mongodb://nfluser:nflpass123@localhost:27017/nfl_gematria
+**Backend** (`packages/backend/.env`):
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nfl_predictor
+MONGODB_URI=mongodb://localhost:27017/nfl_predictor
 REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
+JWT_SECRET=your-secret-key-change-in-production
 ML_SERVICE_URL=http://localhost:5000
 STRIPE_SECRET_KEY=sk_test_...
 ```
 
-**packages/ml-service/.env**
-```
-DATABASE_URL=postgresql://nfluser:nflpass123@localhost:5432/nfl_predictor
+**ML Service** (`packages/ml-service/.env`):
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nfl_predictor
 REDIS_URL=redis://localhost:6379
+DEBUG=true
 ```
 
-## API Documentation
+### 4. Seed Sample Data
 
-Once running, visit:
-- Backend API: http://localhost:3000/api/docs
-- ML Service: http://localhost:5000/docs
-
-## Development
-
-### Running Tests
-```bash
-npm test
-```
-
-### Linting
-```bash
-npm run lint
-```
-
-### Database Migrations
 ```bash
 cd packages/backend
-npm run migrate
+node src/scripts/seed-simple.js
 ```
 
-## Deployment
+### 5. Start All Services
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment instructions.
+```bash
+# Start everything (Windows)
+.\start-all.bat
 
-## Legal & Compliance
+# Or start individually:
+npm run dev:backend   # Backend API (port 4100)
+npm run dev:ml        # ML Service (port 5000)
+npm run dev:mobile    # Mobile App (port 8100)
+```
 
-This app includes:
-- Age verification (21+)
-- Responsible gambling disclaimers
-- State-by-state compliance
-- Privacy policy (GDPR, CCPA)
+### 6. Access the App
 
-**Important**: For entertainment purposes only. Past performance does not guarantee future results.
+- **Mobile Web**: http://localhost:8100
+- **Backend API**: http://localhost:4100
+- **ML Service**: http://localhost:5000
+- **API Docs**: http://localhost:4100/api
 
-## License
+**Default Login:**
+- Email: `test@nflpredictor.com`
+- Password: `password123`
 
-MIT
+## 📁 Project Structure
+
+```
+nfl-predictor/
+├── packages/
+│   ├── backend/              # Node.js/Express API
+│   │   ├── src/
+│   │   │   ├── controllers/  # Request handlers
+│   │   │   ├── middleware/   # Auth, validation
+│   │   │   ├── routes/       # API endpoints
+│   │   │   ├── services/     # Business logic
+│   │   │   ├── scripts/      # Seed, migrations
+│   │   │   └── server.js     # Entry point
+│   │   └── package.json
+│   │
+│   ├── ml-service/           # Python/FastAPI ML
+│   │   ├── api/              # API routes
+│   │   ├── models/           # Trained models
+│   │   ├── services/         # ML logic
+│   │   ├── training/         # Training scripts
+│   │   └── app.py            # Entry point
+│   │
+│   └── mobile/               # React Native/Expo
+│       ├── src/
+│       │   ├── components/   # Reusable components
+│       │   ├── navigation/   # App navigation
+│       │   ├── screens/      # App screens
+│       │   ├── services/     # API client
+│       │   ├── store/        # Redux store
+│       │   └── theme/        # Styling
+│       └── App.js
+│
+├── docker-compose.yml        # Local development
+├── start-all.bat             # Windows startup
+├── stop-all.bat              # Windows shutdown
+├── DEPLOYMENT_GUIDE.md       # Production deployment
+└── README.md                 # This file
+```
+
+## 🏗️ Architecture
+
+### Tech Stack
+
+**Frontend (Mobile)**
+- React Native + Expo
+- Redux Toolkit (state management)
+- React Navigation
+- React Native Paper (UI components)
+- Axios (API client)
+
+**Backend (API)**
+- Node.js + Express
+- PostgreSQL (main database)
+- MongoDB (gematria storage)
+- Redis (caching)
+- Stripe (payments)
+- JWT (authentication)
+
+**ML Service**
+- Python + FastAPI
+- scikit-learn (Random Forest)
+- XGBoost (gradient boosting)
+- TensorFlow (neural networks)
+- Pandas/NumPy (data processing)
+
+### Data Flow
+
+```
+Mobile App → Backend API → ML Service → PostgreSQL/MongoDB
+                ↓              ↓
+            Redis Cache    Redis Cache
+                ↓
+          Stripe (Payments)
+```
+
+## 🚀 Deployment
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for comprehensive production deployment instructions.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 📞 Support
+
+- **Documentation**: See QUICKSTART.md and DEPLOYMENT_GUIDE.md
+- **Issues**: Create an issue in this repository
+- **Email**: support@nflpredictor.com
+
+---
+
+**Built with ❤️ for NFL fans and data enthusiasts**

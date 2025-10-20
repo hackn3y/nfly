@@ -18,7 +18,12 @@ const protect = async (req, res, next) => {
 
     try {
       // Verify token
+      console.log('[Auth Middleware] Verifying token...');
+      console.log('[Auth Middleware] Token:', token.substring(0, 20) + '...');
+      console.log('[Auth Middleware] JWT_SECRET exists:', !!process.env.JWT_SECRET);
+
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('[Auth Middleware] Token verified successfully. User ID:', decoded.id);
 
       // Get user from database
       const pool = getPostgresPool();
@@ -28,18 +33,27 @@ const protect = async (req, res, next) => {
       );
 
       if (result.rows.length === 0) {
+        console.log('[Auth Middleware] User not found in database:', decoded.id);
         return next(new AppError('User not found', 404));
       }
 
       const user = result.rows[0];
+      console.log('[Auth Middleware] User found:', user.email);
 
       if (!user.is_active) {
+        console.log('[Auth Middleware] User account is inactive:', user.email);
         return next(new AppError('User account is inactive', 401));
       }
 
-      req.user = user;
+      // Set default role if not present in database
+      req.user = {
+        ...user,
+        role: user.role || 'user'
+      };
       next();
     } catch (error) {
+      console.error('[Auth Middleware] Token verification failed:', error.message);
+      console.error('[Auth Middleware] Error name:', error.name);
       return next(new AppError('Not authorized to access this route', 401));
     }
   } catch (error) {
@@ -65,7 +79,28 @@ const requireSubscription = (...tiers) => {
   };
 };
 
+// Restrict to specific roles (admin, etc.)
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Not authorized', 401));
+    }
+
+    const userRole = req.user.role || 'user';
+
+    if (!roles.includes(userRole)) {
+      return next(new AppError(
+        'You do not have permission to perform this action',
+        403
+      ));
+    }
+
+    next();
+  };
+};
+
 module.exports = {
   protect,
-  requireSubscription
+  requireSubscription,
+  restrictTo
 };

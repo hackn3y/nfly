@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Optional
+from datetime import datetime
+from fastapi import APIRouter, HTTPException
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import json
+
+from fastapi.encoders import jsonable_encoder
 
 from services.prediction_service import PredictionService
 from utils.database import get_redis
@@ -11,8 +14,13 @@ router = APIRouter()
 
 class PredictionResponse(BaseModel):
     game_id: int
+    season: Optional[int]
+    week: Optional[int]
+    game_date: Optional[datetime]
     home_team: str
     away_team: str
+    home_abbr: Optional[str]
+    away_abbr: Optional[str]
     predicted_winner: str
     predicted_score: dict
     confidence: float
@@ -20,6 +28,10 @@ class PredictionResponse(BaseModel):
     over_under_prediction: float
     key_factors: List[str]
     gematria_insights: Optional[dict] = None
+    injuries: Optional[Dict[str, Any]] = None
+    weather: Optional[Dict[str, Any]] = None
+    venue: Optional[Dict[str, Any]] = None
+    model_breakdown: Optional[Dict[str, Any]] = None
 
 class ParlayRequest(BaseModel):
     game_ids: List[int]
@@ -46,7 +58,7 @@ async def get_upcoming_predictions():
 
         # Cache for 30 minutes
         if redis:
-            await redis.setex(cache_key, 1800, json.dumps(predictions))
+            await redis.setex(cache_key, 1800, json.dumps(jsonable_encoder(predictions)))
 
         return predictions
     except Exception as e:
@@ -73,7 +85,7 @@ async def get_game_prediction(game_id: int):
 
         # Cache for 15 minutes
         if redis:
-            await redis.setex(cache_key, 900, json.dumps(prediction))
+            await redis.setex(cache_key, 900, json.dumps(jsonable_encoder(prediction)))
 
         return prediction
     except Exception as e:

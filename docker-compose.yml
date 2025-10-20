@@ -45,7 +45,7 @@ services:
       dockerfile: Dockerfile
     container_name: nfl-backend
     ports:
-      - "3000:3000"
+      - "4100:4100"
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://nfluser:nflpass123@postgres:5432/nfl_predictor

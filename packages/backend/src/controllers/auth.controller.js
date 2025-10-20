@@ -1,9 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 const { getPostgresPool } = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const emailService = require('../services/email.service');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -55,6 +57,10 @@ exports.register = async (req, res, next) => {
 
     // Generate token
     const token = generateToken(user.id);
+
+    // Send welcome email (async, don't wait)
+    emailService.sendWelcomeEmail(email, firstName || 'there')
+      .catch(err => logger.error(`Failed to send welcome email: ${err.message}`));
 
     logger.info(`New user registered: ${email}`);
 
@@ -203,7 +209,7 @@ exports.logout = async (req, res) => {
   });
 };
 
-// Forgot password (placeholder - would send email in production)
+// Forgot password
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -222,7 +228,21 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
 
-    // TODO: Generate reset token and send email
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    // Save reset token
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3',
+      [resetTokenHash, resetTokenExpiry, email]
+    );
+
+    // Send password reset email
+    emailService.sendPasswordResetEmail(email, resetToken)
+      .catch(err => logger.error(`Failed to send reset email: ${err.message}`));
+
     logger.info(`Password reset requested for: ${email}`);
 
     res.json({
@@ -234,13 +254,53 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-// Reset password (placeholder)
+// Reset password
 exports.resetPassword = async (req, res, next) => {
   try {
-    // TODO: Implement password reset logic
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return next(new AppError('Token and new password required', 400));
+    }
+
+    const pool = getPostgresPool();
+
+    // Hash the provided token
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid reset token
+    const result = await pool.query(
+      `SELECT id, email FROM users
+       WHERE reset_token = $1
+         AND reset_token_expiry > NOW()`,
+      [resetTokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return next(new AppError('Invalid or expired reset token', 400));
+    }
+
+    const user = result.rows[0];
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear reset token
+    await pool.query(
+      `UPDATE users
+       SET password_hash = $1,
+           reset_token = NULL,
+           reset_token_expiry = NULL
+       WHERE id = $2`,
+      [passwordHash, user.id]
+    );
+
+    logger.info(`Password reset successful for: ${user.email}`);
+
     res.json({
       success: true,
-      message: 'Password reset successfully'
+      message: 'Password reset successfully. You can now login with your new password.'
     });
   } catch (error) {
     next(error);

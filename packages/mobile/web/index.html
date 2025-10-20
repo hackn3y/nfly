@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>NFL Predictor</title>
+  
+  <!-- CRITICAL: setImmediate polyfill MUST load before ANY other JavaScript -->
+  <script>
+    // setImmediate polyfill for web browsers
+    (function(global) {
+      'use strict';
+      
+      if (global.setImmediate) {
+        return;
+      }
+      
+      var nextHandle = 1;
+      var tasksByHandle = {};
+      var currentlyRunningATask = false;
+      
+      global.setImmediate = function(callback) {
+        if (typeof callback !== 'function') {
+          callback = new Function('' + callback);
+        }
+        var args = new Array(arguments.length - 1);
+        for (var i = 0; i < args.length; i++) {
+          args[i] = arguments[i + 1];
+        }
+        var handle = nextHandle++;
+        tasksByHandle[handle] = function() {
+          callback.apply(undefined, args);
+        };
+        
+        setTimeout(function() {
+          var task = tasksByHandle[handle];
+          if (task) {
+            delete tasksByHandle[handle];
+            if (!currentlyRunningATask) {
+              currentlyRunningATask = true;
+              try {
+                task();
+              } finally {
+                currentlyRunningATask = false;
+              }
+            }
+          }
+        }, 0);
+        
+        return handle;
+      };
+      
+      global.clearImmediate = function(handle) {
+        delete tasksByHandle[handle];
+      };
+    }(typeof self === 'undefined' ? typeof global === 'undefined' ? this : global : self));
+  </script>
+
+  <!-- CRITICAL: Batched Bridge and Animation polyfills MUST load before React Native Web -->
+  <script>
+    (function() {
+      'use strict';
+
+      // 1. Create comprehensive batched bridge - CRITICAL for animations
+      var batchedBridge = {
+        callFunctionReturnFlushedQueue: function() { return null; },
+        invokeCallbackAndReturnFlushedQueue: function() { return null; },
+        flushedQueue: function() { return null; },
+        callFunctionReturnResultAndFlushedQueue: function() { return null; },
+        flushQueue: function() { return null; },  // CRITICAL for useAnimatedProps
+        getEventLoopRunningTime: function() { return Date.now(); },
+        registerCallableModule: function() {},
+        registerLazyCallableModule: function() {},
+        setGlobalErrorHandler: function() {},
+        enqueueNativeCall: function() {},
+        callNativeSyncHook: function() { return null; },
+        processCallQueue: function() {},
+        getCallableModule: function() { return null; }
+      };
+
+      // 2. Set batched bridge on ALL global contexts
+      window.__fbBatchedBridge = batchedBridge;
+      if (typeof global !== 'undefined') {
+        global.__fbBatchedBridge = batchedBridge;
+      }
+      if (typeof globalThis !== 'undefined') {
+        globalThis.__fbBatchedBridge = batchedBridge;
+      }
+
+      // 3. Create TimingAnimation class for animations
+      function TimingAnimation(config) {
+        this._config = config || {};
+        this._toValue = (config && config.toValue) || 0;
+        this._duration = (config && config.duration) || 500;
+        this._delay = (config && config.delay) || 0;
+        this._onEnd = null;
+        this._animationId = null;
+      }
+
+      TimingAnimation.prototype.start = function(fromValue, onUpdate, onEnd) {
+        this._onEnd = onEnd;
+        var endValue = this._toValue;
+
+        // Immediately jump to end value (no animation on web)
+        if (onUpdate) onUpdate(endValue);
+        if (onEnd) {
+          requestAnimationFrame(function() {
+            onEnd({ finished: true });
+          });
+        }
+      };
+
+      TimingAnimation.prototype.stop = function() {
+        if (this._onEnd) {
+          this._onEnd({ finished: false });
+        }
+      };
+
+      TimingAnimation.prototype.__getNativeAnimationConfig = function() {
+        return {
+          type: 'timing',
+          toValue: this._toValue,
+          duration: this._duration,
+          delay: this._delay
+        };
+      };
+
+      // 4. Export TimingAnimation globally
+      window.__TimingAnimation = TimingAnimation;
+      window._TimingAnimation = TimingAnimation;
+      if (typeof global !== 'undefined') {
+        global.__TimingAnimation = TimingAnimation;
+        global._TimingAnimation = TimingAnimation;
+      }
+
+      // 5. Mock NativeModules
+      window.NativeModules = window.NativeModules || {};
+      window.NativeModules.NativeAnimatedModule = {
+        startAnimatingNode: function() {},
+        stopAnimation: function() {},
+        setAnimatedNodeValue: function() {},
+        setAnimatedNodeOffset: function() {},
+        flattenAnimatedNodeOffset: function() {},
+        createAnimatedNode: function() {},
+        connectAnimatedNodes: function() {},
+        disconnectAnimatedNodes: function() {},
+        connectAnimatedNodeToView: function() {},
+        disconnectAnimatedNodeFromView: function() {},
+        getValue: function(tag, callback) { callback(0); },
+        dropAnimatedNode: function() {},
+        addAnimatedEventToView: function() {},
+        removeAnimatedEventFromView: function() {},
+        startListeningToAnimatedNodeValue: function() {},
+        stopListeningToAnimatedNodeValue: function() {}
+      };
+
+      // 6. Mock ErrorUtils
+      window.ErrorUtils = {
+        setGlobalHandler: function(callback) {
+          window.addEventListener('error', function(event) {
+            callback(event.error, false);
+          });
+        },
+        getGlobalHandler: function() {
+          return function(error) { console.error('Global error:', error); };
+        },
+        reportFatalError: function(error) {
+          console.error('Fatal error:', error);
+        },
+        reportException: function(error, isFatal) {
+          console[isFatal ? 'error' : 'warn']('Exception:', error);
+        }
+      };
+
+      console.log('[HTML Polyfills] Batched Bridge and Animation polyfills loaded');
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+</body>
+</html>

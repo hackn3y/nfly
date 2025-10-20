@@ -8,11 +8,14 @@ import { colors, spacing, typography } from '../../theme';
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const { upcoming, loading } = useSelector((state) => state.predictions);
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, token } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchUpcomingPredictions());
-  }, []);
+    // Only fetch predictions if user is authenticated and has a token
+    if (isAuthenticated && token) {
+      dispatch(fetchUpcomingPredictions());
+    }
+  }, [isAuthenticated, token]);
 
   const handleRefresh = () => {
     dispatch(fetchUpcomingPredictions());

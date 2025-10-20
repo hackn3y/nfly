@@ -66,7 +66,7 @@ Follow these steps in order to get your NFL Predictor app running.
 ### Option A: Automated (Recommended)
 - [ ] Run: `start-services.bat`
 - [ ] Four windows should open:
-  - Backend API (port 3000)
+  - Backend API (port 4100)
   - ML Service (port 5000)
   - Mobile App (Expo)
   - Command prompt
@@ -82,7 +82,7 @@ Follow these steps in order to get your NFL Predictor app running.
 ## ☐ Step 5: Verify Everything is Running
 
 ### Backend API
-- [ ] Open browser: http://localhost:3000/health
+- [ ] Open browser: http://localhost:4100/health
 - [ ] Should see: `{"status":"healthy"...}`
 
 ### ML Service
@@ -143,7 +143,7 @@ $body = @{
     dateOfBirth = "1990-01-01"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:3000/api/auth/register" -Method POST -Body $body -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:4100/api/auth/register" -Method POST -Body $body -ContentType "application/json"
 ```
 
 - [ ] Should receive response with token and user data
@@ -155,7 +155,7 @@ $body = @{
     password = "password123"
 } | ConvertTo-Json
 
-$response = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/login" -Method POST -Body $body -ContentType "application/json"
+$response = Invoke-RestMethod -Uri "http://localhost:4100/api/auth/login" -Method POST -Body $body -ContentType "application/json"
 $token = $response.data.token
 $token  # Save this for next commands
 ```
@@ -168,7 +168,7 @@ $headers = @{
     "Authorization" = "Bearer $token"
 }
 
-Invoke-RestMethod -Uri "http://localhost:3000/api/predictions/upcoming" -Method GET -Headers $headers
+Invoke-RestMethod -Uri "http://localhost:4100/api/predictions/upcoming" -Method GET -Headers $headers
 ```
 
 - [ ] Should receive predictions data
@@ -180,7 +180,7 @@ $body = @{
     methods = @("english", "pythagorean", "chaldean")
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:3000/api/gematria/calculate" -Method POST -Body $body -ContentType "application/json" -Headers $headers
+Invoke-RestMethod -Uri "http://localhost:4100/api/gematria/calculate" -Method POST -Body $body -ContentType "application/json" -Headers $headers
 ```
 
 - [ ] Should receive gematria calculations
@@ -192,7 +192,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/gematria/calculate" -Method PO
 If something isn't working, check these:
 
 ### Port Already in Use
-- [ ] Run: `npx kill-port 3000 5000 8081`
+- [ ] Run: `npx kill-port 4100 5000 8100`
 - [ ] Or restart your computer
 - [ ] Then try starting services again
 

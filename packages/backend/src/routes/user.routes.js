@@ -52,4 +52,22 @@ router.post('/favorites/:teamId', protect, userController.addFavorite);
  */
 router.delete('/favorites/:teamId', protect, userController.removeFavorite);
 
+/**
+ * @route   POST /api/users/push-token
+ * @desc    Save push notification token
+ * @access  Private
+ */
+router.post('/push-token', protect, async (req, res, next) => {
+  try {
+    const { pushToken } = req.body;
+    const pushService = require('../services/push-notification.service');
+
+    const result = await pushService.savePushToken(req.user.id, pushToken);
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

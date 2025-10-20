@@ -10,17 +10,35 @@ const { connectPostgres, connectMongoDB, connectRedis } = require('./config/data
 const logger = require('./utils/logger');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
+const scheduler = require('./jobs/scheduler');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4100;
 
-// Security middleware
-app.use(helmet());
+// Security middleware (relaxed CSP for admin dashboard)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for admin dashboard
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      connectSrc: process.env.NODE_ENV === 'production'
+        ? ["'self'"]
+        : ["'self'", "http://localhost:4100", "http://localhost:5000"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+// CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.FRONTEND_URL || '').split(',').map(url => url.trim())
+  : true; // Allow all origins in development
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://yourdomain.com']
-    : true, // Allow all origins in development
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Rate limiting
@@ -31,6 +49,9 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Webhook route BEFORE body parsing (needs raw body)
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -40,6 +61,9 @@ app.use(compression());
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined', { stream: logger.stream }));
 }
+
+// Serve static files (admin dashboard)
+app.use(express.static('public'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -70,11 +94,21 @@ async function startServer() {
     await connectRedis();
 
     // Start server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`🚀 NFL Predictor Backend running on port ${PORT}`);
       logger.info(`📊 Environment: ${process.env.NODE_ENV}`);
       logger.info(`🔗 API: http://localhost:${PORT}/api`);
+
+      // Start automated job scheduler
+      if (process.env.ENABLE_SCHEDULER !== 'false') {
+        scheduler.start();
+        logger.info('✅ Job scheduler started');
+      } else {
+        logger.info('⚠️  Job scheduler disabled');
+      }
     });
+
+    return server;
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
@@ -84,11 +118,13 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully...');
+  scheduler.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully...');
+  scheduler.stop();
   process.exit(0);
 });
 

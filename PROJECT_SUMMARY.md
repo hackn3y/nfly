@@ -122,10 +122,11 @@ nfly/
 
 **Data Pipeline**
 - ✅ Extensible data fetching framework
-- ✅ Game schedule ingestion
-- ✅ Team stats collection
+- ✅ Game schedule ingestion (ESPN)
+- ✅ Team stats collection (ESPN)
 - ✅ Injury reports
-- ✅ Betting odds integration (structure)
+- ✅ Betting odds integration (The Odds API)
+- ✅ Weather enrichment (OpenWeather)
 
 ### 3. Mobile App (React Native)
 
@@ -295,11 +296,11 @@ docker-compose up -d
 ## 🔮 Next Steps (TODO)
 
 ### High Priority
-1. **Real Data Integration**
-   - Sign up for ESPN API
-   - Integrate The Odds API
-   - Add Weather API
-   - Set up automated data fetching
+1. **Data Feed Hardening**
+   - Configure API keys (ESPN, Odds, OpenWeather) in deployments
+   - Add rate-limit backoff / retry telemetry
+   - Monitor ingestion health (alerts + dashboards)
+   - Automate nightly data quality checks
 
 2. **ML Model Training**
    - Collect historical NFL data (2010-2024)

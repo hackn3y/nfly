@@ -74,7 +74,7 @@ Create `.env` files in each service:
 
 **packages/backend/.env**
 ```env
-PORT=3000
+PORT=4100
 NODE_ENV=development
 DATABASE_URL=postgresql://nfluser:nflpass123@localhost:5432/nfl_predictor
 MONGODB_URI=mongodb://nfluser:nflpass123@localhost:27017/nfl_gematria
@@ -90,6 +90,8 @@ PORT=5000
 DEBUG=True
 DATABASE_URL=postgresql://nfluser:nflpass123@localhost:5432/nfl_predictor
 REDIS_URL=redis://localhost:6379
+ODDS_API_KEY=your-odds-api-key
+WEATHER_API_KEY=your-openweather-key
 ```
 
 **3. Start Services**
@@ -128,7 +130,7 @@ npm start
 ```bash
 # The database will auto-initialize with the schema and NFL teams
 # Check if it's working:
-curl http://localhost:3000/health
+curl http://localhost:4100/health
 curl http://localhost:5000/health
 ```
 
@@ -136,7 +138,7 @@ curl http://localhost:5000/health
 
 **Register a User**
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:4100/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -149,7 +151,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 **Login**
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:4100/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -159,13 +161,13 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 **Get Predictions** (use token from login)
 ```bash
-curl http://localhost:3000/api/predictions/upcoming \
+curl http://localhost:4100/api/predictions/upcoming \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 **Calculate Gematria**
 ```bash
-curl -X POST http://localhost:3000/api/gematria/calculate \
+curl -X POST http://localhost:4100/api/gematria/calculate \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -177,7 +179,7 @@ curl -X POST http://localhost:3000/api/gematria/calculate \
 ## API Documentation
 
 Once services are running:
-- Backend API: http://localhost:3000/api
+- Backend API: http://localhost:4100/api
 - ML Service: http://localhost:5000/docs (Swagger UI)
 
 ## Next Steps
@@ -190,12 +192,27 @@ The mobile app will include:
 - Subscription management
 - Betting tools and parlay optimizer
 
-### Data Integration - TODO
-Need to integrate:
-1. **ESPN API** - Game schedules, scores, team stats
-2. **The Odds API** - Betting lines and odds
-3. **Weather API** - Game day weather conditions
-4. **Injury Reports** - Player availability
+### Data Integration
+
+The backend now pulls live schedules, odds, injuries, and team stats through the ML service. Configure the following keys to enable all feeds:
+
+1. **ESPN Scoreboard** – no key required (public).
+2. **The Odds API** – set `ODDS_API_KEY` in `packages/ml-service/.env`.
+3. **OpenWeather** (current conditions) – set `WEATHER_API_KEY` in `packages/ml-service/.env`.
+
+Trigger a full refresh after setting keys:
+
+```bash
+# From packages/ml-service
+python scripts/update_data.py --season 2025 --week 7
+
+# Or call the FastAPI endpoint directly
+curl -X POST http://localhost:5000/api/data/update/all \
+  -H "Content-Type: application/json" \
+  -d '{"season": 2025, "week": 7, "include_weather": true, "include_odds": true}'
+```
+
+The Node backend exposes the ingested data at `/api/nfl-data`, and the nightly cron job keeps schedules in sync.
 
 ### ML Model Training - TODO
 1. Collect historical NFL game data (2010-2024)
@@ -260,8 +277,8 @@ nfly/
 
 **Port already in use**
 ```bash
-# Kill process on port 3000
-npx kill-port 3000
+# Kill process on port 4100
+npx kill-port 4100
 
 # Or change PORT in .env files
 ```

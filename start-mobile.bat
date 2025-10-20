@@ -3,7 +3,7 @@ echo Starting NFL Predictor Mobile App...
 cd packages\mobile
 start "NFL Mobile App" cmd /k "npm start"
 echo.
-echo Mobile app is starting!
+echo Mobile app is starting on http://localhost:8100!
 echo.
 echo In the Expo window that opens:
 echo   - Press 'w' to open in web browser

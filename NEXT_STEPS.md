@@ -59,7 +59,7 @@ start-services.bat
 ```
 
 This opens 4 windows:
-- Backend API (http://localhost:3000)
+- Backend API (http://localhost:4100)
 - ML Service (http://localhost:5000)
 - Mobile App (Expo)
 - Status window
@@ -89,7 +89,7 @@ npm start
 ## Step 4: Test Everything Works
 
 ### Test Backend API:
-Open browser: http://localhost:3000/health
+Open browser: http://localhost:4100/health
 
 Should see:
 ```json
@@ -150,7 +150,7 @@ $body = @{
     dateOfBirth = "1990-01-01"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:3000/api/auth/register" -Method POST -Body $body -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:4100/api/auth/register" -Method POST -Body $body -ContentType "application/json"
 ```
 
 ### Try Features:
@@ -170,7 +170,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/auth/register" -Method POST -B
 
 ### Port already in use?
 ```bash
-npx kill-port 3000 5000 8081
+npx kill-port 4100 5000 8100
 ```
 
 ### Mobile app won't start?
@@ -216,7 +216,7 @@ type packages\mobile\install.log
 Once Docker Desktop is running:
 1. Run: `docker-compose up -d`
 2. Run: `start-services.bat`
-3. Open http://localhost:3000/health
+3. Open http://localhost:4100/health
 4. Start using the app!
 
 **Need help?** Check:

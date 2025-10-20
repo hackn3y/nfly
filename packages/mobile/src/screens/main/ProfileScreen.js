@@ -6,7 +6,7 @@ import { logout } from '../../store/slices/authSlice';
 import { fetchCurrentSubscription } from '../../store/slices/userSlice';
 import { colors, spacing, typography } from '../../theme';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { subscription } = useSelector((state) => state.user);
@@ -78,47 +78,47 @@ export default function ProfileScreen() {
         <MenuItem
           icon="account-edit"
           label="Edit Profile"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('EditProfile')}
         />
         <MenuItem
           icon="heart"
           label="Favorite Teams"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('FavoriteTeams')}
         />
         <MenuItem
           icon="cog"
           label="Preferences"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('Preferences')}
         />
         <MenuItem
           icon="chart-line"
           label="My Statistics"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('MyStatistics')}
         />
         <MenuItem
           icon="history"
           label="Prediction History"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('PredictionHistory')}
         />
         <MenuItem
           icon="bell"
           label="Notifications"
-          onPress={() => {}}
+          onPress={() => Alert.alert('Coming Soon', 'Notifications feature is under development')}
         />
         <MenuItem
           icon="help-circle"
           label="Help & Support"
-          onPress={() => {}}
+          onPress={() => Alert.alert('Help & Support', 'For support, please email: support@nflpredictor.com\n\nOr visit our documentation at:\nhttps://docs.nflpredictor.com')}
         />
         <MenuItem
           icon="shield-check"
           label="Privacy Policy"
-          onPress={() => {}}
+          onPress={() => Alert.alert('Privacy Policy', 'View our privacy policy at:\nhttps://nflpredictor.com/privacy')}
         />
         <MenuItem
           icon="file-document"
           label="Terms of Service"
-          onPress={() => {}}
+          onPress={() => Alert.alert('Terms of Service', 'View our terms of service at:\nhttps://nflpredictor.com/terms')}
         />
       </View>
 

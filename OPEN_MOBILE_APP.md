@@ -1,12 +1,12 @@
 # 📱 How to Open the Mobile App
 
-The Expo dev server is running on **port 8081**.
+The Expo dev server is running on **port 8100**.
 
 ## Option 1: Open Expo DevTools (Easiest)
 
 **Open your browser and go to:**
 ```
-http://localhost:8081
+http://localhost:8100
 ```
 
 You should see the Expo DevTools interface with a QR code and options.
@@ -36,7 +36,7 @@ If that doesn't work, the Expo server will tell you the correct URL in the DevTo
 
 2. **Make sure your phone is on the same WiFi** as your computer
 
-3. **Open http://localhost:8081** in your browser
+3. **Open http://localhost:8100** in your browser
 
 4. **Scan the QR code** with:
    - iOS: Camera app
@@ -89,8 +89,8 @@ When the app opens, you'll see:
 ## Troubleshooting
 
 ### "Cannot connect to Metro"
-- Make sure backend is running: http://localhost:3000/health
-- Check Expo is running: http://localhost:8081
+- Make sure backend is running: http://localhost:4100/health
+- Check Expo is running: http://localhost:8100
 
 ### "Network request failed"
 - Update the API URL in `packages/mobile/app.json`
@@ -98,7 +98,7 @@ When the app opens, you'll see:
 
 ### Port already in use
 ```bash
-npx kill-port 8081 19006
+npx kill-port 8100 19006
 cd packages\mobile
 npx expo start
 ```
@@ -109,7 +109,7 @@ npx expo start
 
 **Right now, open your browser:**
 ```
-http://localhost:8081
+http://localhost:8100
 ```
 
 You should see the Expo DevTools!
@@ -134,4 +134,4 @@ Once opened:
 - Email: `test@nflpredictor.com`
 - Password: `password123`
 
-**Try it now:** http://localhost:8081
+**Try it now:** http://localhost:8100

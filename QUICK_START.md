@@ -95,7 +95,7 @@ cd packages/backend
 npm run dev
 ```
 
-Backend will start on http://localhost:3000
+Backend will start on http://localhost:4100
 
 ### Step 4: Start ML Service
 
@@ -129,7 +129,7 @@ Expo will open. Press:
 
 **Backend API:**
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:4100/health
 ```
 Expected: `{"status":"healthy"...}`
 
@@ -153,14 +153,14 @@ Expected: 3 containers running (postgres, mongodb, redis)
 
 **Register a user:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/register ^
+curl -X POST http://localhost:4100/api/auth/register ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"test@example.com\",\"password\":\"password123\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"dateOfBirth\":\"1990-01-01\"}"
 ```
 
 **Login:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/login ^
+curl -X POST http://localhost:4100/api/auth/login ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"test@example.com\",\"password\":\"password123\"}"
 ```
@@ -169,7 +169,7 @@ Save the token from the response.
 
 **Get predictions (replace YOUR_TOKEN):**
 ```bash
-curl http://localhost:3000/api/predictions/upcoming ^
+curl http://localhost:4100/api/predictions/upcoming ^
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -195,11 +195,11 @@ This opens Swagger UI where you can test all ML endpoints.
 **Kill processes on specific ports:**
 ```bash
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :4100
 taskkill /PID <PID> /F
 
 # Or use npx
-npx kill-port 3000 3001 5000 8081
+npx kill-port 4100 5000 8100
 ```
 
 ### Docker Not Starting
@@ -255,7 +255,7 @@ py -3.10 -m pip install -r requirements.txt
 
 Once everything is running:
 
-1. **Explore the API** - Visit http://localhost:3000/api
+1. **Explore the API** - Visit http://localhost:4100/api
 2. **Check ML Docs** - Visit http://localhost:5000/docs
 3. **Use the Mobile App** - Register, explore predictions, try gematria
 4. **Read the docs:**

@@ -22,11 +22,18 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
+      console.log('[authSlice] login thunk called with:', credentials.email);
+      console.log('[authSlice] API URL:', api.defaults.baseURL);
+      
       const response = await api.post('/auth/login', credentials);
+      console.log('[authSlice] Login response:', response.data);
+      
       const { token, user } = response.data.data;
       await SecureStore.setItemAsync(TOKEN_KEY, token);
       return { token, user };
     } catch (error) {
+      console.error('[authSlice] Login error:', error);
+      console.error('[authSlice] Error response:', error.response?.data);
       return rejectWithValue(error.response?.data?.error || 'Login failed');
     }
   }

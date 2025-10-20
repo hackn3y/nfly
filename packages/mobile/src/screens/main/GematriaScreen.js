@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput as RNTextInput, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { calculateGematria } from '../../store/slices/gematriaSlice';
@@ -44,13 +43,12 @@ export default function GematriaScreen() {
         {/* Input Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Enter Text</Text>
-          <TextInput
+          <RNTextInput
             value={text}
             onChangeText={setText}
             placeholder="e.g., Kansas City Chiefs"
-            mode="outlined"
+            placeholderTextColor={colors.placeholder}
             style={styles.input}
-            theme={{ colors: { primary: colors.primary } }}
           />
 
           {/* Method Selection */}
@@ -199,6 +197,12 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.surface,
     marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.text,
+    fontSize: 16,
   },
   label: {
     color: colors.placeholder,

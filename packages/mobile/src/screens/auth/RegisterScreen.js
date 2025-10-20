@@ -1,10 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Checkbox } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../../store/slices/authSlice';
 import { colors, spacing, typography } from '../../theme';
+
+// Simple TextInput for web without animations
+const SimpleTextInput = ({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
+  if (Platform.OS !== 'web') {
+    return null;
+  }
+  
+  return (
+    <View style={[styles.simpleInputContainer, style]}>
+      <Text style={styles.simpleInputLabel}>{label}</Text>
+      <RNTextInput
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        style={styles.simpleInput}
+        placeholderTextColor={colors.placeholder}
+      />
+    </View>
+  );
+};
 
 export default function RegisterScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -79,44 +101,125 @@ export default function RegisterScreen({ navigation }) {
           <Text style={styles.subtitle}>Join the NFL prediction community</Text>
 
           <View style={styles.form}>
-            <TextInput
-              label="First Name"
-              value={formData.firstName}
-              onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-              mode="outlined"
-              style={styles.input}
-              theme={{ colors: { primary: colors.primary } }}
-            />
+            {Platform.OS === 'web' ? (
+              <>
+                <SimpleTextInput
+                  label="First Name"
+                  value={formData.firstName}
+                  onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+                  style={styles.input}
+                />
 
-            <TextInput
-              label="Last Name"
-              value={formData.lastName}
-              onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-              mode="outlined"
-              style={styles.input}
-              theme={{ colors: { primary: colors.primary } }}
-            />
+                <SimpleTextInput
+                  label="Last Name"
+                  value={formData.lastName}
+                  onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+                  style={styles.input}
+                />
 
-            <TextInput
-              label="Email"
-              value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
-              mode="outlined"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input}
-              theme={{ colors: { primary: colors.primary } }}
-            />
+                <SimpleTextInput
+                  label="Email"
+                  value={formData.email}
+                  onChangeText={(text) => setFormData({ ...formData, email: text })}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.input}
+                />
 
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateLabel}>Date of Birth</Text>
-              <Text style={styles.dateValue}>
-                {formData.dateOfBirth.toLocaleDateString()}
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateLabel}>Date of Birth</Text>
+                  <Text style={styles.dateValue}>
+                    {formData.dateOfBirth.toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+
+                <SimpleTextInput
+                  label="Password"
+                  value={formData.password}
+                  onChangeText={(text) => setFormData({ ...formData, password: text })}
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                />
+
+                <SimpleTextInput
+                  label="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                />
+              </>
+            ) : (
+              <>
+                <TextInput
+                  label="First Name"
+                  value={formData.firstName}
+                  onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+                  mode="outlined"
+                  style={styles.input}
+                  theme={{ colors: { primary: colors.primary } }}
+                />
+
+                <TextInput
+                  label="Last Name"
+                  value={formData.lastName}
+                  onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+                  mode="outlined"
+                  style={styles.input}
+                  theme={{ colors: { primary: colors.primary } }}
+                />
+
+                <TextInput
+                  label="Email"
+                  value={formData.email}
+                  onChangeText={(text) => setFormData({ ...formData, email: text })}
+                  mode="outlined"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.input}
+                  theme={{ colors: { primary: colors.primary } }}
+                />
+
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateLabel}>Date of Birth</Text>
+                  <Text style={styles.dateValue}>
+                    {formData.dateOfBirth.toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+
+                <TextInput
+                  label="Password"
+                  value={formData.password}
+                  onChangeText={(text) => setFormData({ ...formData, password: text })}
+                  mode="outlined"
+                  secureTextEntry={!showPassword}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? 'eye-off' : 'eye'}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                  style={styles.input}
+                  theme={{ colors: { primary: colors.primary } }}
+                />
+
+                <TextInput
+                  label="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+                  mode="outlined"
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                  theme={{ colors: { primary: colors.primary } }}
+                />
+              </>
+            )}
 
             {showDatePicker && (
               <DateTimePicker
@@ -132,32 +235,6 @@ export default function RegisterScreen({ navigation }) {
                 maximumDate={new Date()}
               />
             )}
-
-            <TextInput
-              label="Password"
-              value={formData.password}
-              onChangeText={(text) => setFormData({ ...formData, password: text })}
-              mode="outlined"
-              secureTextEntry={!showPassword}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? 'eye-off' : 'eye'}
-                  onPress={() => setShowPassword(!showPassword)}
-                />
-              }
-              style={styles.input}
-              theme={{ colors: { primary: colors.primary } }}
-            />
-
-            <TextInput
-              label="Confirm Password"
-              value={formData.confirmPassword}
-              onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-              mode="outlined"
-              secureTextEntry={!showPassword}
-              style={styles.input}
-              theme={{ colors: { primary: colors.primary } }}
-            />
 
             <View style={styles.checkboxContainer}>
               <Checkbox
@@ -269,5 +346,24 @@ const styles = StyleSheet.create({
   signInText: {
     color: colors.primary,
     fontWeight: 'bold',
+  },
+  // Simple input styles for web (no animations)
+  simpleInputContainer: {
+    marginBottom: spacing.md,
+  },
+  simpleInputLabel: {
+    fontSize: 12,
+    color: colors.placeholder,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  simpleInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text,
   },
 });

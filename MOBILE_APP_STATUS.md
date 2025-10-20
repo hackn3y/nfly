@@ -3,9 +3,9 @@
 ## Current State
 
 ### Services Running:
-- Backend API: http://localhost:3000 (HEALTHY)
+- Backend API: http://localhost:4100 (HEALTHY)
 - ML Service: http://localhost:5000 (HEALTHY)
-- Expo Dev Server: http://localhost:8081 (RUNNING)
+- Expo Dev Server: http://localhost:8100 (RUNNING)
 - Databases: PostgreSQL, MongoDB, Redis (ALL RUNNING)
 
 ### What's Working:
@@ -43,7 +43,7 @@ The React Native web build in monorepo has Metro bundler resolution issues with 
 
 2. **Make sure your phone is on the same WiFi** as your computer
 
-3. **Open in browser**: http://localhost:8081
+3. **Open in browser**: http://localhost:8100
 
 4. **Scan the QR code**:
    - iOS: Use Camera app
@@ -68,7 +68,7 @@ Login with:
 
 ### Option 3: Use Expo DevTools
 
-1. Open http://localhost:8081 in your browser
+1. Open http://localhost:8100 in your browser
 2. You'll see the Expo DevTools interface
 3. Options available:
    - Open on your phone (QR code)
@@ -147,7 +147,7 @@ packages/mobile/
 - Formik & Yup (forms)
 
 ### API Integration:
-All screens are connected to http://localhost:3000/api
+All screens are connected to http://localhost:4100/api
 
 The app includes:
 - JWT authentication with SecureStore
@@ -168,7 +168,7 @@ Use Expo Go on your phone for the best development experience! This is what Expo
 
 ## Current Expo Server
 
-The Expo server is running at: **http://localhost:8081**
+The Expo server is running at: **http://localhost:8100**
 
 Open this URL now to:
 1. See the QR code

@@ -9,7 +9,7 @@
 
 ### Backend API
 - ✅ **Status**: HEALTHY and running
-- ✅ **Port**: 3000
+- ✅ **Port**: 4100
 - ✅ **Database**: Connected to PostgreSQL
 - ✅ **Endpoints**: All working
 
@@ -30,12 +30,12 @@
 
 ### Backend API
 ```
-http://localhost:3000/api
+http://localhost:4100/api
 ```
 
 **Health Check:**
 ```
-http://localhost:3000/health
+http://localhost:4100/health
 ```
 
 ### ML Service
@@ -82,14 +82,14 @@ Then:
 
 **1. Register a new user:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/register ^
+curl -X POST http://localhost:4100/api/auth/register ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"another@test.com\",\"password\":\"password123\",\"firstName\":\"Jane\",\"lastName\":\"Smith\",\"dateOfBirth\":\"1995-05-15\"}"
 ```
 
 **2. Login:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/login ^
+curl -X POST http://localhost:4100/api/auth/login ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"test@nflpredictor.com\",\"password\":\"password123\"}"
 ```
@@ -98,13 +98,13 @@ Save the token from the response!
 
 **3. Get predictions (replace YOUR_TOKEN):**
 ```bash
-curl http://localhost:3000/api/predictions/upcoming ^
+curl http://localhost:4100/api/predictions/upcoming ^
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 **4. Calculate gematria:**
 ```bash
-curl -X POST http://localhost:3000/api/gematria/calculate ^
+curl -X POST http://localhost:4100/api/gematria/calculate ^
   -H "Authorization: Bearer YOUR_TOKEN" ^
   -H "Content-Type: application/json" ^
   -d "{\"text\":\"Buffalo Bills\",\"methods\":[\"english\",\"pythagorean\",\"chaldean\"]}"
@@ -173,7 +173,7 @@ docker-compose down
 
 ### 1. Test Gematria Calculator
 ```bash
-curl -X POST http://localhost:3000/api/gematria/calculate ^
+curl -X POST http://localhost:4100/api/gematria/calculate ^
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." ^
   -H "Content-Type: application/json" ^
   -d "{\"text\":\"Patrick Mahomes\",\"methods\":[\"english\"]}"
@@ -273,9 +273,9 @@ You have a fully functional NFL prediction app running locally!
 - Subscription: Free tier
 
 **URLs to Remember:**
-- Backend: http://localhost:3000/api
+- Backend: http://localhost:4100/api
 - ML API Docs: http://localhost:5000/docs
-- Health Check: http://localhost:3000/health
+- Health Check: http://localhost:4100/health
 
 Enjoy exploring your app! 🏈
 

@@ -75,7 +75,7 @@
    This will start all services in separate windows.
 
 4. **Test the Application**
-   - Test backend: `curl http://localhost:3000/health`
+   - Test backend: `curl http://localhost:4100/health`
    - Test ML service: `curl http://localhost:5000/health`
    - Use mobile app: Follow Expo instructions
 
@@ -230,7 +230,7 @@
 ## 🎯 Success Metrics
 
 Once running, you should see:
-- ✅ Backend API responding at :3000
+- ✅ Backend API responding at :4100
 - ✅ ML Service responding at :5000
 - ✅ Mobile app loading in Expo
 - ✅ 3 Docker containers running (postgres, mongodb, redis)

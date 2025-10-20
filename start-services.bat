@@ -21,7 +21,7 @@ echo.
 echo Starting Backend API...
 start "NFL Backend" cmd /k "cd packages\backend && npm run dev"
 timeout /t 3 /nobreak >nul
-echo ✓ Backend starting on http://localhost:3000
+echo ✓ Backend starting on http://localhost:4100
 echo.
 
 echo Starting ML Service...
@@ -39,9 +39,9 @@ echo ================================
 echo All Services Started!
 echo ================================
 echo.
-echo Backend API:     http://localhost:3000/api
+echo Backend API:     http://localhost:4100/api
 echo ML Service:      http://localhost:5000/docs
-echo Mobile App:      Check the Expo window
+echo Mobile App:      http://localhost:8100 (Expo DevTools)
 echo.
 echo Press any key to view status...
 pause
