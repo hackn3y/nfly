@@ -52,9 +52,10 @@ This is your complete deployment guide with every step.
    - SMTP username
    - SMTP password
 
-3. **JWT Secret** (already generated)
-   ```
-   2vTa1+78jyKBjKf6M39qMNFJ+E2t75ABtLkQKjl1kav9sTHUWhumnixLhx7JzPQjDl2qg+mU74NZbtxmmcfZ7g==
+3. **JWT Secret** (⚠️ Generate your own!)
+   ```bash
+   # Run this command to generate YOUR secret:
+   node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
    ```
 
 4. **Credit Card** (for Railway)

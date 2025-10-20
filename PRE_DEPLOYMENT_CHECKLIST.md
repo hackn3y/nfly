@@ -235,14 +235,18 @@ Once all items are checked:
 
 ## Generated Secrets
 
-**JWT Secret** (keep secure!):
-```
-2vTa1+78jyKBjKf6M39qMNFJ+E2t75ABtLkQKjl1kav9sTHUWhumnixLhx7JzPQjDl2qg+mU74NZbtxmmcfZ7g==
+**JWT Secret** (⚠️ GENERATE YOUR OWN FOR PRODUCTION!):
+
+⚠️ **IMPORTANT:** Generate a NEW secret for production - don't use the example below!
+
+```bash
+# Run this command to generate YOUR OWN secret:
+node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
 ```
 
-To generate a new one:
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+Example output (DO NOT USE THIS):
+```
+2vTa1+78jyKBjKf6M39qMNFJ+E2t75ABtLkQKjl1kav9sTHUWhumnixLhx7JzPQjDl2qg+mU74NZbtxmmcfZ7g==
 ```
 
 ---
