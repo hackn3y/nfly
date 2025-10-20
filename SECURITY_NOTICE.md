@@ -6,14 +6,17 @@ This repository contains **example/template files only** - no real secrets are c
 
 ---
 
-## ⚠️ GitHub Security Alerts
+## ⚠️ GitHub Security Alerts - RESOLVED
 
-If you see GitHub security alerts about "exposed secrets", these are **false positives** for:
+**Status:** ✅ All alerts resolved - no secrets in repository
 
-### 1. Example Environment Files
+Previous GitHub security alerts were **false positives** that have been fixed:
+
+### 1. Example Environment Files - FIXED ✅
 - **File:** `packages/backend/.env.production.example`
 - **Status:** ✅ Safe - This is a template file
-- **Contents:** Placeholder values like `YOUR_USERNAME`, `YOUR_PASSWORD`, `YOUR_CLUSTER`
+- **Previous Format:** `mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@...` (triggered scanner)
+- **Current Format:** `mongodb+srv://<username>:<password>@...` (safe placeholders)
 - **Purpose:** Shows format for production environment variables
 
 ### 2. Documentation Examples
