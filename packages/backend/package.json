@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "start:prod": "npm run migrate && node src/server.js",
+    "start:prod": "npm run reset-failed-migration; npm run migrate && node src/server.js",
+    "reset-failed-migration": "node src/db/reset-failed-migration.js || true",
     "dev": "nodemon src/server.js",
     "test": "jest --coverage",
     "lint": "eslint src/",
