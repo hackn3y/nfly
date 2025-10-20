@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "start:prod": "npm run migrate && node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --coverage",
     "lint": "eslint src/",
