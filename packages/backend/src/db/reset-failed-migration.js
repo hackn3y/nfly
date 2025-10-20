@@ -16,12 +16,12 @@ async function resetFailedMigration() {
   const client = await pool.connect();
 
   try {
-    console.log('🔄 Resetting failed migration: 003_add_stripe_fields.sql');
+    console.log('🔄 Resetting any failed migrations...');
 
-    // Remove the migration record so it can run again
+    // Remove failed migration records so they can run again
     await client.query(`
       DELETE FROM migrations
-      WHERE name = '003_add_stripe_fields.sql'
+      WHERE name IN ('003_add_stripe_fields.sql', '004_add_accuracy_tracking.sql')
     `);
 
     console.log('✅ Migration record removed - it will run again on next deployment');
