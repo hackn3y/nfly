@@ -20,6 +20,28 @@ async function runMigrations() {
   try {
     console.log('🔄 Starting database migrations...');
 
+    // First, run init.sql if tables don't exist
+    const initPath = path.join(__dirname, '../../db/init.sql');
+    if (fs.existsSync(initPath)) {
+      console.log('🔄 Checking if base schema exists...');
+
+      const { rows } = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables
+          WHERE table_name = 'users'
+        );
+      `);
+
+      if (!rows[0].exists) {
+        console.log('🔄 Running initial schema setup (init.sql)...');
+        const initSQL = fs.readFileSync(initPath, 'utf8');
+        await client.query(initSQL);
+        console.log('✅ Initial schema created successfully');
+      } else {
+        console.log('✅ Base schema already exists, skipping init.sql');
+      }
+    }
+
     // Create migrations table if it doesn't exist
     await client.query(`
       CREATE TABLE IF NOT EXISTS migrations (
