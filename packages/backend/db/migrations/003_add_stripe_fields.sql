@@ -12,7 +12,7 @@ CREATE INDEX IF NOT EXISTS idx_users_stripe_subscription ON users(stripe_subscri
 -- Create payments table for tracking all transactions
 CREATE TABLE IF NOT EXISTS payments (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stripe_invoice_id VARCHAR(100) UNIQUE,
   stripe_payment_intent_id VARCHAR(100),
   amount INTEGER NOT NULL,  -- Amount in cents
