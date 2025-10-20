@@ -37,6 +37,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS payments_updated_at ON payments;
 CREATE TRIGGER payments_updated_at
   BEFORE UPDATE ON payments
   FOR EACH ROW
