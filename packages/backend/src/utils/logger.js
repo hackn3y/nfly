@@ -23,7 +23,29 @@ const logger = winston.createLogger({
           ({ level, message, timestamp, ...metadata }) => {
             let msg = `${timestamp} [${level}]: ${message}`;
             if (Object.keys(metadata).length > 0) {
-              msg += ` ${JSON.stringify(metadata)}`;
+              try {
+                // Filter out circular references and non-serializable objects
+                const filteredMetadata = Object.keys(metadata).reduce((acc, key) => {
+                  if (key !== 'service' && metadata[key] !== undefined) {
+                    try {
+                      // Test if it can be stringified
+                      JSON.stringify(metadata[key]);
+                      acc[key] = metadata[key];
+                    } catch (e) {
+                      // Skip circular or non-serializable properties
+                      acc[key] = '[Circular or Non-Serializable]';
+                    }
+                  }
+                  return acc;
+                }, {});
+
+                if (Object.keys(filteredMetadata).length > 0) {
+                  msg += ` ${JSON.stringify(filteredMetadata)}`;
+                }
+              } catch (e) {
+                // If all else fails, just log the message without metadata
+                msg += ` [Metadata logging error]`;
+              }
             }
             return msg;
           }

@@ -15,6 +15,9 @@ const scheduler = require('./jobs/scheduler');
 const app = express();
 const PORT = process.env.PORT || 4100;
 
+// Trust proxy (required for Railway and other cloud platforms)
+app.set('trust proxy', 1);
+
 // Security middleware (relaxed CSP for admin dashboard)
 app.use(helmet({
   contentSecurityPolicy: {
