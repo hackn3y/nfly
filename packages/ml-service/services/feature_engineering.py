@@ -354,7 +354,7 @@ class FeatureEngineer:
                     SELECT total_yards, turnovers
                     FROM team_stats
                     WHERE team_id = :team_id AND season = :season
-                      AND (:week IS NULL OR week IS NULL OR week <= :week)
+                      AND (CAST(:week AS INTEGER) IS NULL OR week IS NULL OR week <= :week)
                     ORDER BY COALESCE(week, 0) DESC
                     LIMIT 1
                     """
