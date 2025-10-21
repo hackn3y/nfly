@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS bets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  game_id UUID REFERENCES games(id) ON DELETE SET NULL,
+  game_id INTEGER REFERENCES games(id) ON DELETE SET NULL,
   bet_type VARCHAR(50) NOT NULL, -- 'spread', 'moneyline', 'over_under', 'parlay', 'prop'
   amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
   odds DECIMAL(10, 2) NOT NULL,
