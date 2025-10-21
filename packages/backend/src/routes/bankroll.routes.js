@@ -6,8 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const bankrollController = require('../controllers/bankroll.controller');
-const { protect } = require('../middleware/auth');
-const { requireSubscription } = require('../middleware/subscriptionCheck');
+const { protect, requireSubscription } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(protect);
