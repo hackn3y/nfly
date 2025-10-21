@@ -38,7 +38,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-  "apiUrl": "http://localhost:4100/api",
+      "apiUrl": "https://nfl-predictorbackend-production.up.railway.app/api",
       "eas": {
         "projectId": "your-project-id"
       }
