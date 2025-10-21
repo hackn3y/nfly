@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, TextInput as RNTextInput } from 'react-native';
-import { TextInput, Checkbox } from 'react-native-paper';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { TextInput } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../../store/slices/authSlice';
 import { colors, spacing, typography } from '../../theme';
+
+// Conditionally import native-only components
+let DateTimePicker = null;
+let Checkbox = null;
+
+if (Platform.OS !== 'web') {
+  DateTimePicker = require('@react-native-community/datetimepicker').default;
+  Checkbox = require('react-native-paper').Checkbox;
+}
 
 // Simple TextInput for web without animations
 const SimpleTextInput = ({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
   if (Platform.OS !== 'web') {
     return null;
   }
-  
+
   return (
     <View style={[styles.simpleInputContainer, style]}>
       <Text style={styles.simpleInputLabel}>{label}</Text>
@@ -25,6 +33,22 @@ const SimpleTextInput = ({ label, value, onChangeText, secureTextEntry, keyboard
         placeholderTextColor={colors.placeholder}
       />
     </View>
+  );
+};
+
+// Simple Checkbox for web
+const SimpleCheckbox = ({ checked, onPress, label }) => {
+  if (Platform.OS !== 'web') {
+    return null;
+  }
+
+  return (
+    <TouchableOpacity style={styles.webCheckboxContainer} onPress={onPress}>
+      <View style={[styles.webCheckbox, checked && styles.webCheckboxChecked]}>
+        {checked && <Text style={styles.webCheckboxCheck}>✓</Text>}
+      </View>
+      <Text style={styles.checkboxText}>{label}</Text>
+    </TouchableOpacity>
   );
 };
 
@@ -126,15 +150,20 @@ export default function RegisterScreen({ navigation }) {
                   style={styles.input}
                 />
 
-                <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Text style={styles.dateLabel}>Date of Birth</Text>
-                  <Text style={styles.dateValue}>
-                    {formData.dateOfBirth.toLocaleDateString()}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.simpleInputContainer}>
+                  <Text style={styles.simpleInputLabel}>Date of Birth</Text>
+                  <RNTextInput
+                    type="date"
+                    value={formData.dateOfBirth.toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      const date = new Date(e.target.value);
+                      if (!isNaN(date.getTime())) {
+                        setFormData({ ...formData, dateOfBirth: date });
+                      }
+                    }}
+                    style={styles.simpleInput}
+                  />
+                </View>
 
                 <SimpleTextInput
                   label="Password"
@@ -221,7 +250,7 @@ export default function RegisterScreen({ navigation }) {
               </>
             )}
 
-            {showDatePicker && (
+            {showDatePicker && DateTimePicker && (
               <DateTimePicker
                 value={formData.dateOfBirth}
                 mode="date"
@@ -236,16 +265,24 @@ export default function RegisterScreen({ navigation }) {
               />
             )}
 
-            <View style={styles.checkboxContainer}>
-              <Checkbox
-                status={agreedToTerms ? 'checked' : 'unchecked'}
+            {Platform.OS === 'web' ? (
+              <SimpleCheckbox
+                checked={agreedToTerms}
                 onPress={() => setAgreedToTerms(!agreedToTerms)}
-                color={colors.primary}
+                label="I agree to the Terms & Conditions and confirm I am 21+"
               />
-              <Text style={styles.checkboxText}>
-                I agree to the Terms & Conditions and confirm I am 21+
-              </Text>
-            </View>
+            ) : (
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  status={agreedToTerms ? 'checked' : 'unchecked'}
+                  onPress={() => setAgreedToTerms(!agreedToTerms)}
+                  color={colors.primary}
+                />
+                <Text style={styles.checkboxText}>
+                  I agree to the Terms & Conditions and confirm I am 21+
+                </Text>
+              </View>
+            )}
 
             <TouchableOpacity
               style={styles.registerButton}
@@ -365,5 +402,29 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: colors.text,
+  },
+  // Web checkbox styles
+  webCheckboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  webCheckbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  webCheckboxChecked: {
+    backgroundColor: colors.primary,
+  },
+  webCheckboxCheck: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
