@@ -157,18 +157,77 @@ exports.getGameGematria = async (req, res, next) => {
 exports.getPlayerGematria = async (req, res, next) => {
   try {
     const { playerId } = req.params;
+    const redis = getRedisClient();
+    const cacheKey = `gematria:player:${playerId}`;
 
-    // TODO: Fetch player data from database
-    // For now, return placeholder
+    // Try cache
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cached),
+        cached: true
+      });
+    }
+
+    // Fetch player data from database
+    const { getPostgresPool } = require('../config/database');
+    const pool = getPostgresPool();
+
+    const playerResult = await pool.query(
+      `SELECT p.*, t.name as team_name, t.abbreviation as team_abbr
+       FROM players p
+       LEFT JOIN teams t ON p.team_id = t.id
+       WHERE p.id = $1`,
+      [playerId]
+    );
+
+    if (playerResult.rows.length === 0) {
+      return next(new AppError('Player not found', 404));
+    }
+
+    const player = playerResult.rows[0];
+
+    // Calculate gematria for player attributes
+    const analysis = {
+      player: {
+        id: player.id,
+        name: player.name,
+        position: player.position,
+        jerseyNumber: player.jersey_number,
+        team: player.team_name
+      },
+      nameAnalysis: calculateAllMethods(player.name),
+      positionAnalysis: calculateAllMethods(player.position || ''),
+      jerseyNumerology: player.jersey_number ? {
+        number: player.jersey_number,
+        reduced: reduceToSingleDigit(player.jersey_number),
+        significance: getNumberSignificance(player.jersey_number)
+      } : null,
+      teamConnection: player.team_name ? calculateAllMethods(player.team_name) : null,
+      insights: generatePlayerInsights(player)
+    };
+
+    // Cache for 1 hour
+    await redis.setEx(cacheKey, 3600, JSON.stringify(analysis));
+
     res.json({
       success: true,
-      data: {
-        message: 'Player gematria analysis coming soon',
-        playerId
-      }
+      data: analysis,
+      cached: false
     });
   } catch (error) {
     logger.error('Error getting player gematria:', error);
+    // If players table doesn't exist, return helpful message
+    if (error.message && error.message.includes('relation "players" does not exist')) {
+      return res.json({
+        success: true,
+        data: {
+          message: 'Player database not yet configured. Run migrations to enable player gematria analysis.',
+          playerId: req.params.playerId
+        }
+      });
+    }
     next(error);
   }
 };
@@ -177,14 +236,79 @@ exports.getPlayerGematria = async (req, res, next) => {
 exports.getTeamGematria = async (req, res, next) => {
   try {
     const { teamId } = req.params;
+    const redis = getRedisClient();
+    const cacheKey = `gematria:team:${teamId}`;
 
-    // TODO: Fetch team data and analyze
+    // Try cache
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cached),
+        cached: true
+      });
+    }
+
+    // Fetch team data
+    const { getPostgresPool } = require('../config/database');
+    const pool = getPostgresPool();
+
+    const teamResult = await pool.query(
+      `SELECT * FROM teams WHERE id = $1`,
+      [teamId]
+    );
+
+    if (teamResult.rows.length === 0) {
+      return next(new AppError('Team not found', 404));
+    }
+
+    const team = teamResult.rows[0];
+
+    // Get team's recent performance for context
+    const recentGames = await pool.query(
+      `SELECT COUNT(*) as total_games,
+              SUM(CASE WHEN (home_team_id = $1 AND home_score > away_score) OR
+                           (away_team_id = $1 AND away_score > home_score) THEN 1 ELSE 0 END) as wins
+       FROM games
+       WHERE (home_team_id = $1 OR away_team_id = $1)
+         AND status = 'final'
+         AND season >= EXTRACT(YEAR FROM CURRENT_DATE) - 1`,
+      [teamId]
+    );
+
+    const stats = recentGames.rows[0];
+
+    // Calculate gematria for team attributes
+    const analysis = {
+      team: {
+        id: team.id,
+        name: team.name,
+        abbreviation: team.abbreviation,
+        location: team.location,
+        mascot: team.mascot,
+        conference: team.conference,
+        division: team.division
+      },
+      teamNameAnalysis: calculateAllMethods(team.name),
+      mascotAnalysis: team.mascot ? calculateAllMethods(team.mascot) : null,
+      locationAnalysis: team.location ? calculateAllMethods(team.location) : null,
+      abbreviationAnalysis: calculateAllMethods(team.abbreviation),
+      divisionAnalysis: calculateAllMethods(team.division || ''),
+      recentPerformance: {
+        totalGames: parseInt(stats.total_games),
+        wins: parseInt(stats.wins),
+        winRate: stats.total_games > 0 ? (stats.wins / stats.total_games * 100).toFixed(1) : 0
+      },
+      insights: generateTeamInsights(team, stats)
+    };
+
+    // Cache for 1 hour
+    await redis.setEx(cacheKey, 3600, JSON.stringify(analysis));
+
     res.json({
       success: true,
-      data: {
-        message: 'Team gematria analysis coming soon',
-        teamId
-      }
+      data: analysis,
+      cached: false
     });
   } catch (error) {
     logger.error('Error getting team gematria:', error);
@@ -195,20 +319,81 @@ exports.getTeamGematria = async (req, res, next) => {
 // Find number matches and patterns
 exports.findMatches = async (req, res, next) => {
   try {
-    const { number, context } = req.body;
+    const { number, context = 'all' } = req.body;
 
     if (!number) {
       return next(new AppError('Number required', 400));
     }
 
-    // TODO: Search database for matching gematria values
+    const { getPostgresPool } = require('../config/database');
+    const pool = getPostgresPool();
+
+    const matches = {
+      number: parseInt(number),
+      reduced: reduceToSingleDigit(parseInt(number)),
+      significance: getNumberSignificance(parseInt(number)),
+      teams: [],
+      games: [],
+      patterns: []
+    };
+
+    // Search teams whose names match this gematria value
+    if (context === 'all' || context === 'teams') {
+      const teams = await pool.query(`SELECT * FROM teams`);
+
+      for (const team of teams.rows) {
+        const teamValue = calculateValue(team.name);
+        if (teamValue === parseInt(number) || reduceToSingleDigit(teamValue) === reduceToSingleDigit(parseInt(number))) {
+          matches.teams.push({
+            id: team.id,
+            name: team.name,
+            gematriaValue: teamValue,
+            reduced: reduceToSingleDigit(teamValue),
+            exactMatch: teamValue === parseInt(number)
+          });
+        }
+      }
+    }
+
+    // Search recent games with this pattern
+    if (context === 'all' || context === 'games') {
+      const games = await pool.query(`
+        SELECT id, home_team, away_team, game_date, home_score, away_score
+        FROM games
+        WHERE status = 'final'
+        ORDER BY game_date DESC
+        LIMIT 100
+      `);
+
+      for (const game of games.rows) {
+        const homeValue = calculateValue(game.home_team);
+        const awayValue = calculateValue(game.away_team);
+        const totalScore = (game.home_score || 0) + (game.away_score || 0);
+
+        if (homeValue === parseInt(number) || awayValue === parseInt(number) ||
+            reduceToSingleDigit(homeValue) === reduceToSingleDigit(parseInt(number)) ||
+            reduceToSingleDigit(awayValue) === reduceToSingleDigit(parseInt(number)) ||
+            totalScore === parseInt(number)) {
+          matches.games.push({
+            id: game.id,
+            homeTeam: game.home_team,
+            awayTeam: game.away_team,
+            homeValue: homeValue,
+            awayValue: awayValue,
+            totalScore: totalScore,
+            date: game.game_date,
+            matchType: getMatchType(parseInt(number), homeValue, awayValue, totalScore)
+          });
+        }
+      }
+    }
+
+    // Detect patterns
+    matches.patterns = detectNumerologicalPatterns(parseInt(number));
+
     res.json({
       success: true,
-      data: {
-        number,
-        matches: [],
-        message: 'Pattern matching coming soon'
-      }
+      data: matches
     });
   } catch (error) {
     logger.error('Error finding matches:', error);
@@ -270,6 +455,125 @@ function findPatterns(game) {
       type: 'master_number',
       description: 'Difference is a multiple of 11 (master number)',
       significance: 'medium'
+    });
+  }
+
+  return patterns;
+}
+
+// Helper: Get number significance
+function getNumberSignificance(num) {
+  const masterNumbers = [11, 22, 33, 44, 55, 66, 77, 88, 99];
+  if (masterNumbers.includes(num)) {
+    return `Master Number ${num} - Powerful spiritual significance`;
+  }
+
+  const reduced = reduceToSingleDigit(num);
+  const meanings = {
+    1: 'Leadership, independence, new beginnings',
+    2: 'Balance, partnership, diplomacy',
+    3: 'Creativity, expression, joy',
+    4: 'Stability, foundation, hard work',
+    5: 'Change, freedom, adventure',
+    6: 'Harmony, responsibility, nurturing',
+    7: 'Spirituality, introspection, wisdom',
+    8: 'Power, abundance, success',
+    9: 'Completion, humanitarianism, wisdom'
+  };
+
+  return meanings[reduced] || 'Unknown significance';
+}
+
+// Helper: Generate player insights
+function generatePlayerInsights(player) {
+  const insights = [];
+
+  // Jersey number insights
+  if (player.jersey_number) {
+    const reduced = reduceToSingleDigit(player.jersey_number);
+    insights.push(`Jersey #${player.jersey_number} reduces to ${reduced}: ${getNumberSignificance(player.jersey_number)}`);
+  }
+
+  // Name value insights
+  const nameValue = calculateValue(player.name);
+  insights.push(`Name gematria value: ${nameValue}`);
+
+  return insights;
+}
+
+// Helper: Generate team insights
+function generateTeamInsights(team, stats) {
+  const insights = [];
+
+  const nameValue = calculateValue(team.name);
+  const reduced = reduceToSingleDigit(nameValue);
+
+  insights.push(`Team name value: ${nameValue}, reduced to ${reduced}`);
+
+  if (stats.total_games > 0) {
+    const winRate = (stats.wins / stats.total_games * 100).toFixed(1);
+    insights.push(`Recent performance: ${stats.wins}W-${stats.total_games - stats.wins}L (${winRate}% win rate)`);
+  }
+
+  return insights;
+}
+
+// Helper: Get match type for pattern search
+function getMatchType(number, homeValue, awayValue, totalScore) {
+  const types = [];
+
+  if (homeValue === number) types.push('home_team_exact');
+  if (awayValue === number) types.push('away_team_exact');
+  if (totalScore === number) types.push('total_score_exact');
+
+  const reduced = reduceToSingleDigit(number);
+  if (reduceToSingleDigit(homeValue) === reduced) types.push('home_team_reduced');
+  if (reduceToSingleDigit(awayValue) === reduced) types.push('away_team_reduced');
+
+  return types.join(', ');
+}
+
+// Helper: Detect numerological patterns
+function detectNumerologicalPatterns(number) {
+  const patterns = [];
+
+  // Master numbers
+  if ([11, 22, 33, 44, 55, 66, 77, 88, 99].includes(number)) {
+    patterns.push({
+      type: 'master_number',
+      description: `${number} is a master number`,
+      significance: 'very_high'
+    });
+  }
+
+  // Repeating digits
+  const numStr = number.toString();
+  if (numStr.length > 1 && new Set(numStr).size === 1) {
+    patterns.push({
+      type: 'repeating_digits',
+      description: 'All digits are the same',
+      significance: 'high'
+    });
+  }
+
+  // Sequential digits
+  if (numStr.length === 3) {
+    const digits = numStr.split('').map(d => parseInt(d));
+    if (digits[1] === digits[0] + 1 && digits[2] === digits[1] + 1) {
+      patterns.push({
+        type: 'sequential',
+        description: 'Sequential ascending digits',
+        significance: 'medium'
+      });
+    }
+  }
+
+  // Multiples of 7 (lucky number)
+  if (number % 7 === 0 && number !== 0) {
+    patterns.push({
+      type: 'multiple_of_seven',
+      description: 'Multiple of 7 (lucky number)',
+      significance: 'low'
     });
   }
 
