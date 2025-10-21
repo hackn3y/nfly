@@ -42,6 +42,16 @@ if (!allowedOrigins.includes('https://nfly.netlify.app')) {
   allowedOrigins.push('https://nfly.netlify.app');
 }
 
+// Allow localhost for development
+if (process.env.NODE_ENV !== 'production') {
+  const devOrigins = ['http://localhost:8100', 'http://localhost:3000', 'http://localhost:19006'];
+  devOrigins.forEach(origin => {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
+}
+
 logger.info(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
 
 app.use(cors({
