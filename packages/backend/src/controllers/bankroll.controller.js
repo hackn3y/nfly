@@ -5,7 +5,7 @@
 
 const { getPostgresPool } = require('../config/database');
 const logger = require('../utils/logger');
-const AppError = require('../utils/appError');
+const { AppError } = require('../middleware/errorHandler');
 
 /**
  * @desc    Get user's current bankroll and stats
