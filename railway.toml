@@ -1,11 +1,13 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && cd packages/backend && npm install && cd ../ml-service && pip install -r requirements.txt"
+buildCommand = "npm install && cd packages/backend && npm install"
+watchPatterns = ["packages/backend/**"]
 
 [deploy]
-startCommand = "cd packages/backend && npm run start:prod && npm run seed"
+startCommand = "sh -c 'cd packages/backend && npm run start:prod'"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+workingDirectory = "packages/backend"
 
 [[deploy.healthcheck]]
 httpPath = "/health"

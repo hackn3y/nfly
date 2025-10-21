@@ -10,4 +10,5 @@ COPY . .
 
 EXPOSE 4100
 
-CMD ["npm", "start"]
+# Run migrations then start server
+CMD ["npm", "run", "start:prod"]
