@@ -1,7 +1,7 @@
 [build]
   base = "packages/mobile"
   command = "npm run build:web"
-  publish = "web-build"
+  publish = "dist"
 
 [[redirects]]
   from = "/*"
