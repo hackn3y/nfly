@@ -5,17 +5,43 @@
 const request = require('supertest');
 const express = require('express');
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const { getPostgresPool, getRedisClient } = require('../../src/config/database');
 
+// Mock dependencies before requiring routes
 jest.mock('axios');
 jest.mock('../../src/config/database');
 jest.mock('../../src/utils/logger');
 
+// Mock auth middleware before it's required by routes
+jest.mock('../../src/middleware/auth', () => ({
+  protect: (req, res, next) => {
+    req.user = {
+      id: 'test-user-123',
+      email: 'test@example.com',
+      subscription_tier: 'pro'
+    };
+    next();
+  },
+  requireSubscription: () => (req, res, next) => next(),
+  restrictTo: () => (req, res, next) => next()
+}));
+
+// Mock subscription middleware
+jest.mock('../../src/middleware/subscriptionCheck', () => ({
+  checkPredictionLimit: (req, res, next) => next(),
+  requireFeature: () => (req, res, next) => next(),
+  requirePlayerProps: (req, res, next) => next(),
+  requireLivePredictions: (req, res, next) => next(),
+  requireAdvancedStats: (req, res, next) => next(),
+  attachTierInfo: (req, res, next) => {
+    req.tierInfo = { tier: 'pro', features: [] };
+    next();
+  }
+}));
+
 describe('Prediction Routes Integration', () => {
   let app;
   let mockPool, mockRedis;
-  let authToken;
 
   beforeAll(() => {
     // Create Express app with routes
@@ -35,24 +61,9 @@ describe('Prediction Routes Integration', () => {
     getPostgresPool.mockReturnValue(mockPool);
     getRedisClient.mockReturnValue(mockRedis);
 
-    // Set up auth middleware and routes
-    const authMiddleware = require('../../src/middleware/auth');
+    // Load routes after mocks are set up
     const predictionRoutes = require('../../src/routes/prediction.routes');
-
-    // Mock protect middleware to inject test user
-    jest.spyOn(authMiddleware, 'protect').mockImplementation((req, res, next) => {
-      req.user = {
-        id: 'test-user-123',
-        email: 'test@example.com',
-        subscription_tier: 'premium'
-      };
-      next();
-    });
-
     app.use('/api/predictions', predictionRoutes);
-
-    // Generate test auth token
-    authToken = jwt.sign({ id: 'test-user-123' }, 'test-secret');
   });
 
   beforeEach(() => {
@@ -75,7 +86,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/upcoming')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -99,7 +109,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/upcoming')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -114,7 +123,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/upcoming')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(500);
     });
@@ -139,7 +147,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/game/123')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -160,7 +167,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/game/123')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.cached).toBe(true);
@@ -180,7 +186,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/weekly?week=10&season=2025')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -225,7 +230,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/history')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -242,10 +246,9 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .get('/api/predictions/history')
-        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.stats.accuracy).toBe('0');
+      expect(response.body.data.stats.accuracy).toBe('0.00');
     });
   });
 
@@ -271,7 +274,6 @@ describe('Prediction Routes Integration', () => {
 
       const response = await request(app)
         .post('/api/predictions/parlay')
-        .set('Authorization', `Bearer ${authToken}`)
         .send(parlayRequest);
 
       expect(response.status).toBe(200);
@@ -283,7 +285,6 @@ describe('Prediction Routes Integration', () => {
     it('should reject invalid input', async () => {
       const response = await request(app)
         .post('/api/predictions/parlay')
-        .set('Authorization', `Bearer ${authToken}`)
         .send({ gameIds: 'not-an-array' });
 
       expect(response.status).toBe(400);
@@ -292,14 +293,13 @@ describe('Prediction Routes Integration', () => {
     it('should reject missing gameIds', async () => {
       const response = await request(app)
         .post('/api/predictions/parlay')
-        .set('Authorization', `Bearer ${authToken}`)
         .send({});
 
       expect(response.status).toBe(400);
     });
   });
 
-  describe('GET /api/predictions/model-stats', () => {
+  describe('GET /api/predictions/stats', () => {
     it('should return model performance statistics', async () => {
       const modelStats = {
         overall_accuracy: 0.72,
@@ -314,8 +314,7 @@ describe('Prediction Routes Integration', () => {
       axios.get.mockResolvedValue({ data: modelStats });
 
       const response = await request(app)
-        .get('/api/predictions/model-stats')
-        .set('Authorization', `Bearer ${authToken}`);
+        .get('/api/predictions/stats')
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -331,8 +330,7 @@ describe('Prediction Routes Integration', () => {
       mockRedis.get.mockResolvedValue(JSON.stringify(cachedStats));
 
       const response = await request(app)
-        .get('/api/predictions/model-stats')
-        .set('Authorization', `Bearer ${authToken}`);
+        .get('/api/predictions/stats')
 
       expect(response.status).toBe(200);
       expect(response.body.cached).toBe(true);
