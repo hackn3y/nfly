@@ -8,13 +8,15 @@
   ],
   "scripts": {
     "install:all": "npm install && cd packages/mobile && npm install && cd ../backend && npm install && cd ../ml-service && pip install -r requirements.txt",
-  "dev:backend": "cd packages/backend && npm run dev",
-  "dev:mobile": "cd packages/mobile && npm start",
-  "dev:ml": "cd packages/ml-service && python app.py",
+    "dev:backend": "cd packages/backend && npm run dev",
+    "dev:mobile": "cd packages/mobile && npm start",
+    "dev:ml": "cd packages/ml-service && python app.py",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "import:season": "cd packages/backend && npm run import:season",
+    "generate:predictions": "cd packages/backend && npm run generate:predictions"
   },
   "keywords": [
     "nfl",

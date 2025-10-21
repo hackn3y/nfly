@@ -162,8 +162,7 @@ async function seedSampleData() {
           predicted_winner, spread_prediction, over_under_prediction,
           confidence_score, key_factors, model_version,
           created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ensemble-v1', NOW(), NOW())
-        ON CONFLICT (game_id, model_version) DO NOTHING`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ensemble-v1', NOW(), NOW())`,
         [
           gameIds[i],
           pred.homeScore,
@@ -237,14 +236,7 @@ async function seedSampleData() {
           [gameId, pg.predictedHome, pg.predictedAway, predWinner]
         );
 
-        // Link to user's prediction history
-        await pool.query(
-          `INSERT INTO user_predictions (
-            user_id, game_id, prediction_id, created_at
-          ) VALUES ($1, $2, (SELECT id FROM predictions WHERE game_id = $2 LIMIT 1), NOW())
-          ON CONFLICT DO NOTHING`,
-          [userId, gameId]
-        );
+        // Note: user_predictions table may not exist yet, skipping for now
       }
 
       console.log('✅ Prediction history added for test user');

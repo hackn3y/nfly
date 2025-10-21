@@ -251,15 +251,65 @@ py -3.10 -m pip install -r requirements.txt
 
 ---
 
+## Import NFL Season & Generate Predictions
+
+### Option A: Sample Data (Quick Testing)
+
+```bash
+cd packages/backend
+npm run seed
+```
+
+This creates sample games and predictions for testing.
+
+### Option B: Real NFL Season Data
+
+```bash
+cd packages/backend
+
+# Step 1: Run database migrations (if not done yet)
+npm run migrate
+
+# Step 2: Import current NFL season from ESPN
+npm run import:season 2024
+
+# Step 3: Generate ML predictions for all games
+npm run generate:predictions
+```
+
+**What this does:**
+- ✅ Downloads real NFL schedule from ESPN API
+- ✅ Imports all teams, games, odds, weather data
+- ✅ Generates ML predictions with confidence scores
+- ✅ Shows featured predictions (highest confidence picks)
+
+**View predictions:**
+```bash
+# Get all upcoming predictions
+curl http://localhost:4100/api/predictions/upcoming \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get featured predictions (≥70% confidence)
+curl "http://localhost:4100/api/predictions/upcoming?minConfidence=0.70" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**For detailed guide, see:** [PREDICTION_GUIDE.md](./PREDICTION_GUIDE.md)
+
+---
+
 ## Next Steps
 
 Once everything is running:
 
-1. **Explore the API** - Visit http://localhost:4100/api
-2. **Check ML Docs** - Visit http://localhost:5000/docs
-3. **Use the Mobile App** - Register, explore predictions, try gematria
-4. **Read the docs:**
+1. **Import NFL Season** - `npm run import:season 2024`
+2. **Generate Predictions** - `npm run generate:predictions`
+3. **Explore the API** - Visit http://localhost:4100/api
+4. **Check ML Docs** - Visit http://localhost:5000/docs
+5. **Use the Mobile App** - Register, explore predictions, try gematria
+6. **Read the docs:**
    - `README.md` - Project overview
+   - `PREDICTION_GUIDE.md` - Prediction system guide (NEW!)
    - `SETUP.md` - Detailed setup
    - `PROJECT_SUMMARY.md` - Complete feature list
 

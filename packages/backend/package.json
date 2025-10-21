@@ -11,7 +11,9 @@
     "test": "jest --coverage",
     "lint": "eslint src/",
     "migrate": "node src/db/migrate.js",
-    "seed": "node src/db/seed.js"
+    "seed": "node src/db/seed.js",
+    "import:season": "node src/scripts/import-nfl-season.js",
+    "generate:predictions": "node src/scripts/generate-predictions.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
