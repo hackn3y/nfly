@@ -80,14 +80,7 @@ async function generatePredictions(limit = null) {
             model_version,
             created_at,
             updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-          ON CONFLICT (game_id) DO UPDATE SET
-            predicted_home_score = EXCLUDED.predicted_home_score,
-            predicted_away_score = EXCLUDED.predicted_away_score,
-            predicted_winner = EXCLUDED.predicted_winner,
-            confidence = EXCLUDED.confidence,
-            ml_features = EXCLUDED.ml_features,
-            updated_at = NOW()`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
           [
             game.id,
             prediction.predicted_score?.home || null,
