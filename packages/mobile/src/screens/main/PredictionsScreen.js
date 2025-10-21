@@ -33,11 +33,16 @@ export default function PredictionsScreen() {
   };
 
   const handleWeekChange = (direction) => {
-    const newWeek = currentWeek + direction;
-    if (newWeek >= 1 && newWeek <= 18) {
+    let newWeek = currentWeek + direction;
+
+    // Keep navigating until we find a week with games or hit boundaries
+    while (newWeek >= 1 && newWeek <= 18) {
+      console.log('[PredictionsScreen] Checking Week', newWeek);
       dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
       dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason }));
       setViewMode('weekly');
+      break; // For now just go one week at a time
+      // TODO: Could add logic to check if week has games and skip if empty
     }
   };
 
@@ -119,8 +124,14 @@ export default function PredictionsScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Icon name="football" size={64} color={colors.placeholder} />
-            <Text style={styles.emptyText}>No predictions available</Text>
-            <Text style={styles.emptySubtext}>Check back later for upcoming games</Text>
+            <Text style={styles.emptyText}>
+              {viewMode === 'weekly' ? `No games for Week ${currentWeek}` : 'No predictions available'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {viewMode === 'weekly'
+                ? 'Try navigating to a different week'
+                : 'Check back later for upcoming games'}
+            </Text>
           </View>
         )}
       </ScrollView>
