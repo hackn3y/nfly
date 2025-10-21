@@ -2,24 +2,83 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { fetchUpcomingPredictions } from '../../store/slices/predictionsSlice';
+import { fetchUpcomingPredictions, fetchWeeklyPredictions, setCurrentWeek } from '../../store/slices/predictionsSlice';
 import { colors, spacing, typography } from '../../theme';
 
 export default function PredictionsScreen() {
   const dispatch = useDispatch();
-  const { upcoming, loading } = useSelector((state) => state.predictions);
+  const { upcoming, weekly, loading, currentWeek, currentSeason } = useSelector((state) => state.predictions);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' or 'weekly'
+
+  // Get current NFL season and week based on actual data
+  const getCurrentNFLWeek = () => {
+    // For now, default to 2025 season Week 10 (where we have data)
+    // In production, this should query the backend for current week
+    return { season: 2025, week: 10 };
+  };
 
   useEffect(() => {
+    const { season, week } = getCurrentNFLWeek();
+    dispatch(setCurrentWeek({ season, week }));
     dispatch(fetchUpcomingPredictions());
   }, []);
 
   const handleRefresh = () => {
-    dispatch(fetchUpcomingPredictions());
+    if (viewMode === 'upcoming') {
+      dispatch(fetchUpcomingPredictions());
+    } else {
+      dispatch(fetchWeeklyPredictions({ week: currentWeek, season: currentSeason }));
+    }
   };
+
+  const handleWeekChange = (direction) => {
+    const newWeek = currentWeek + direction;
+    if (newWeek >= 1 && newWeek <= 18) {
+      dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
+      dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason }));
+      setViewMode('weekly');
+    }
+  };
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    if (mode === 'upcoming') {
+      dispatch(fetchUpcomingPredictions());
+    } else {
+      dispatch(fetchWeeklyPredictions({ week: currentWeek, season: currentSeason }));
+    }
+  };
+
+  const displayPredictions = viewMode === 'upcoming' ? upcoming : weekly;
 
   return (
     <View style={styles.container}>
+      {/* Week Navigation */}
+      <View style={styles.weekNavigation}>
+        <TouchableOpacity
+          style={styles.weekButton}
+          onPress={() => handleViewModeChange('upcoming')}
+        >
+          <Text style={[styles.weekButtonText, viewMode === 'upcoming' && styles.weekButtonTextActive]}>
+            Upcoming
+          </Text>
+        </TouchableOpacity>
+        <View style={styles.weekSelector}>
+          <TouchableOpacity onPress={() => handleWeekChange(-1)} disabled={!currentWeek || currentWeek <= 1}>
+            <Icon name="chevron-left" size={24} color={currentWeek > 1 ? colors.primary : colors.placeholder} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleViewModeChange('weekly')}>
+            <Text style={[styles.weekText, viewMode === 'weekly' && styles.weekTextActive]}>
+              Week {currentWeek || '?'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleWeekChange(1)} disabled={!currentWeek || currentWeek >= 18}>
+            <Icon name="chevron-right" size={24} color={currentWeek < 18 ? colors.primary : colors.placeholder} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Filters */}
       <View style={styles.filtersContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -53,9 +112,9 @@ export default function PredictionsScreen() {
           <RefreshControl refreshing={loading} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
-        {upcoming && upcoming.length > 0 ? (
-          upcoming.map((prediction, index) => (
-            <DetailedPredictionCard key={index} prediction={prediction} />
+        {displayPredictions && displayPredictions.length > 0 ? (
+          displayPredictions.map((prediction, index) => (
+            <DetailedPredictionCard key={prediction.game_id || index} prediction={prediction} />
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -83,17 +142,33 @@ function FilterChip({ label, active, onPress }) {
 }
 
 function DetailedPredictionCard({ prediction }) {
-  const confidenceColor = prediction.confidence > 0.7 ? colors.success :
-                         prediction.confidence > 0.55 ? colors.warning : colors.placeholder;
+  const confidence = prediction.confidence || 0.5;
+  const confidenceColor = confidence > 0.7 ? colors.success :
+                         confidence > 0.55 ? colors.warning : colors.placeholder;
+
+  // Format predicted winner
+  const winner = prediction.predicted_winner === 'home'
+    ? prediction.home_team
+    : prediction.predicted_winner === 'away'
+    ? prediction.away_team
+    : prediction.predicted_winner;
+
+  // Format game date
+  const formatGameDate = (dateString) => {
+    if (!dateString) return 'TBD';
+    const date = new Date(dateString);
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
 
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.cardHeader}>
-        <Text style={styles.gameDate}>Sunday, Oct 20</Text>
+        <Text style={styles.gameDate}>{formatGameDate(prediction.game_date)}</Text>
         <View style={styles.confidenceBadge}>
           <Text style={styles.confidenceText}>
-            {(prediction.confidence * 100).toFixed(0)}% Confidence
+            {(confidence * 100).toFixed(0)}% Confidence
           </Text>
         </View>
       </View>
@@ -123,7 +198,7 @@ function DetailedPredictionCard({ prediction }) {
           <Icon name="trophy" size={16} color={colors.primary} />
           <Text style={styles.detailLabel}>Winner:</Text>
           <Text style={[styles.detailValue, styles.winner]}>
-            {prediction.predicted_winner}
+            {winner}
           </Text>
         </View>
 
@@ -165,6 +240,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  weekNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  weekButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  weekButtonText: {
+    color: colors.placeholder,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  weekButtonTextActive: {
+    color: colors.primary,
+  },
+  weekSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  weekText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginHorizontal: spacing.md,
+  },
+  weekTextActive: {
+    color: colors.primary,
   },
   filtersContainer: {
     paddingVertical: spacing.md,
@@ -248,17 +358,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   details: {
-    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   detailLabel: {
     color: colors.placeholder,
     flex: 1,
+    marginLeft: spacing.sm,
   },
   detailValue: {
     color: colors.text,
@@ -280,12 +390,12 @@ const styles = StyleSheet.create({
   factor: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
     marginBottom: spacing.xs,
   },
   factorText: {
     color: colors.text,
     fontSize: 12,
+    marginLeft: spacing.sm,
   },
   emptyState: {
     flex: 1,

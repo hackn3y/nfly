@@ -412,19 +412,15 @@ class PredictionService:
         return game_data
 
     async def _get_weekly_games(self, week: int, season: int) -> List[Dict]:
-        """Fetch games for a specific week"""
+        """Fetch games for a specific week (including completed games)"""
         async with SessionLocal() as session:
             result = await session.execute(
                 text(
                     """
-                    SELECT id, home_team, away_team, game_date, season, week
+                    SELECT id, home_team, away_team, game_date, season, week, status
                     FROM games
                     WHERE season = :season AND week = :week
-                                            AND status NOT IN (
-                                                'final', 'STATUS_FINAL',
-                                                'postponed', 'STATUS_POSTPONED',
-                                                'canceled', 'STATUS_CANCELED'
-                                            )
+                    AND status NOT IN ('postponed', 'STATUS_POSTPONED', 'canceled', 'STATUS_CANCELED')
                     ORDER BY game_date ASC
                     """
                 ),

@@ -7,7 +7,7 @@ import { colors, spacing, typography } from '../../theme';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { upcoming, loading } = useSelector((state) => state.predictions);
+  const { upcoming, loading, error } = useSelector((state) => state.predictions);
   const { user, isAuthenticated, token } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function HomeScreen({ navigation }) {
 
         {upcoming && upcoming.length > 0 ? (
           upcoming.slice(0, 3).map((prediction, index) => (
-            <PredictionCard key={index} prediction={prediction} />
+            <PredictionCard key={prediction.game_id || index} prediction={prediction} />
           ))
         ) : (
           <Text style={styles.noData}>No upcoming games</Text>
@@ -100,26 +100,44 @@ function StatCard({ icon, label, value }) {
 }
 
 function PredictionCard({ prediction }) {
-  const confidenceColor = prediction.confidence > 0.7 ? colors.success :
-                         prediction.confidence > 0.55 ? colors.warning : colors.placeholder;
+  if (!prediction) {
+    console.log('[PredictionCard] No prediction data');
+    return null;
+  }
+
+  const confidence = prediction.confidence || 0.5;
+  const confidenceColor = confidence > 0.7 ? colors.success :
+                         confidence > 0.55 ? colors.warning : colors.placeholder;
+
+  // Format predicted winner - handle both "home"/"away" and team names
+  let winner = prediction.predicted_winner;
+  if (winner === 'home') {
+    winner = prediction.home_team;
+  } else if (winner === 'away') {
+    winner = prediction.away_team;
+  }
 
   return (
     <View style={styles.predictionCard}>
       <View style={styles.matchup}>
-        <Text style={styles.teamName}>{prediction.home_team}</Text>
-        <Text style={styles.vs}>vs</Text>
-        <Text style={styles.teamName}>{prediction.away_team}</Text>
+        <View style={styles.teamContainer}>
+          <Text style={styles.teamName}>{prediction.home_team || 'Home'}</Text>
+        </View>
+        <Text style={styles.vs}>VS</Text>
+        <View style={styles.teamContainer}>
+          <Text style={styles.teamName}>{prediction.away_team || 'Away'}</Text>
+        </View>
       </View>
 
       <View style={styles.predictionDetails}>
         <View style={styles.predictionRow}>
-          <Text style={styles.label}>Predicted Winner:</Text>
-          <Text style={[styles.value, styles.winner]}>{prediction.predicted_winner}</Text>
+          <Text style={styles.label}>Winner:</Text>
+          <Text style={[styles.value, styles.winner]}>{winner || 'TBD'}</Text>
         </View>
         <View style={styles.predictionRow}>
           <Text style={styles.label}>Confidence:</Text>
           <Text style={[styles.value, { color: confidenceColor }]}>
-            {(prediction.confidence * 100).toFixed(1)}%
+            {(confidence * 100).toFixed(0)}%
           </Text>
         </View>
       </View>
@@ -180,7 +198,6 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
     marginBottom: spacing.lg,
   },
   statCard: {
@@ -189,6 +206,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 12,
     alignItems: 'center',
+    marginHorizontal: spacing.sm,
   },
   statValue: {
     ...typography.h2,
@@ -215,45 +233,59 @@ const styles = StyleSheet.create({
   },
   predictionCard: {
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: 12,
     marginBottom: spacing.md,
   },
   matchup: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  teamContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   teamName: {
-    ...typography.h3,
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
     textAlign: 'center',
   },
   vs: {
-    color: colors.placeholder,
-    paddingHorizontal: spacing.md,
+    color: '#a0a0a0',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingHorizontal: spacing.sm,
   },
   predictionDetails: {
-    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   predictionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
   },
   label: {
-    color: colors.placeholder,
+    color: '#a0a0a0',
+    fontSize: 14,
   },
   value: {
-    color: colors.text,
+    color: '#ffffff',
     fontWeight: '600',
+    fontSize: 14,
   },
   winner: {
-    color: colors.primary,
+    color: '#00D9FF',
   },
   actionsGrid: {
     flexDirection: 'row',
-    gap: spacing.md,
+    justifyContent: 'space-between',
   },
   actionCard: {
     flex: 1,
@@ -261,6 +293,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 12,
     alignItems: 'center',
+    marginHorizontal: spacing.sm,
   },
   actionCardHighlight: {
     backgroundColor: colors.primary,

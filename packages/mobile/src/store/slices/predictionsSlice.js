@@ -13,6 +13,22 @@ export const fetchUpcomingPredictions = createAsyncThunk(
   }
 );
 
+export const fetchWeeklyPredictions = createAsyncThunk(
+  'predictions/fetchWeekly',
+  async ({ week, season }, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/predictions/weekly', {
+        params: { week, season }
+      });
+      // Handle both formats: response.data.data or response.data directly
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error(`[predictionsSlice] Failed to fetch Week ${week} Season ${season}:`, error.response?.data);
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch weekly predictions');
+    }
+  }
+);
+
 export const fetchGamePrediction = createAsyncThunk(
   'predictions/fetchGame',
   async (gameId, { rejectWithValue }) => {
@@ -41,6 +57,9 @@ const predictionsSlice = createSlice({
   name: 'predictions',
   initialState: {
     upcoming: [],
+    weekly: [],
+    currentWeek: null,
+    currentSeason: null,
     currentGame: null,
     parlay: null,
     loading: false,
@@ -52,6 +71,10 @@ const predictionsSlice = createSlice({
     },
     clearParlay: (state) => {
       state.parlay = null;
+    },
+    setCurrentWeek: (state, action) => {
+      state.currentWeek = action.payload.week;
+      state.currentSeason = action.payload.season;
     },
   },
   extraReducers: (builder) => {
@@ -66,6 +89,19 @@ const predictionsSlice = createSlice({
         state.upcoming = action.payload;
       })
       .addCase(fetchUpcomingPredictions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch weekly
+      .addCase(fetchWeeklyPredictions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWeeklyPredictions.fulfilled, (state, action) => {
+        state.loading = false;
+        state.weekly = action.payload;
+      })
+      .addCase(fetchWeeklyPredictions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -98,5 +134,5 @@ const predictionsSlice = createSlice({
   },
 });
 
-export const { clearError, clearParlay } = predictionsSlice.actions;
+export const { clearError, clearParlay, setCurrentWeek } = predictionsSlice.actions;
 export default predictionsSlice.reducer;
