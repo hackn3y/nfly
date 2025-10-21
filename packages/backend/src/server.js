@@ -33,9 +33,16 @@ app.use(helmet({
   },
 }));
 // CORS configuration
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.FRONTEND_URL || 'https://nfly.netlify.app').split(',').map(url => url.trim())
-  : true; // Allow all origins in development
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['https://nfly.netlify.app']; // Default to Netlify domain
+
+// Always allow the Netlify domain
+if (!allowedOrigins.includes('https://nfly.netlify.app')) {
+  allowedOrigins.push('https://nfly.netlify.app');
+}
+
+logger.info(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
 
 app.use(cors({
   origin: allowedOrigins,
