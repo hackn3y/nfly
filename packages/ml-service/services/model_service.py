@@ -112,7 +112,30 @@ class ModelService:
             results["xgboost"] = {"accuracy": float(xgb_acc)}
             logger.info(f"XGBoost trained: {xgb_acc:.3f} accuracy")
 
-            # TODO: Train Neural Network with TensorFlow
+            # Train Neural Network
+            logger.info("Training Neural Network...")
+            from sklearn.neural_network import MLPClassifier
+            from sklearn.preprocessing import StandardScaler
+
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+
+            nn_model = MLPClassifier(
+                hidden_layer_sizes=(64, 32, 16),
+                activation='relu',
+                solver='adam',
+                max_iter=500,
+                random_state=42,
+                early_stopping=True,
+                validation_fraction=0.1
+            )
+            nn_model.fit(X_train_scaled, y_train)
+            nn_acc = accuracy_score(y_test, nn_model.predict(X_test_scaled))
+            joblib.dump(nn_model, self.models_dir / "nn_model.joblib")
+            joblib.dump(scaler, self.models_dir / "scaler.joblib")
+            results["neural_network"] = {"accuracy": float(nn_acc)}
+            logger.info(f"Neural Network trained: {nn_acc:.3f} accuracy")
 
             logger.info("Model training completed")
             return {
@@ -161,19 +184,86 @@ class ModelService:
 
     async def _load_training_data(self):
         """Load historical game data for training"""
-        # TODO: Query database for historical games with outcomes
-        # For now, generate synthetic data for testing
+        from utils.database import get_postgres_connection
 
-        logger.warning("Using synthetic training data - replace with real data")
+        try:
+            logger.info("Loading historical game data from database...")
+            conn = get_postgres_connection()
+
+            query = """
+                SELECT
+                    g.id,
+                    g.season,
+                    g.week,
+                    g.home_score,
+                    g.away_score,
+                    g.spread,
+                    g.over_under,
+                    CASE WHEN g.home_team_id = ht.id AND ht.conference = at.conference THEN 1 ELSE 0 END as same_conf,
+                    CASE WHEN g.home_team_id = ht.id AND ht.division = at.division THEN 1 ELSE 0 END as same_div,
+                    CASE WHEN g.home_score > g.away_score THEN 1 ELSE 0 END as home_won
+                FROM games g
+                JOIN teams ht ON g.home_team_id = ht.id
+                JOIN teams at ON g.away_team_id = at.id
+                WHERE g.season >= 2015
+                  AND g.status = 'final'
+                  AND g.home_score IS NOT NULL
+                  AND g.away_score IS NOT NULL
+                ORDER BY g.season, g.week
+            """
+
+            df = pd.read_sql(query, conn)
+            conn.close()
+
+            if len(df) < 100:
+                logger.warning(f"Only {len(df)} games found. Need at least 100 for training.")
+                logger.warning("Falling back to synthetic data.")
+                return await self._generate_synthetic_data()
+
+            logger.info(f"Loaded {len(df)} historical games")
+
+            # Engineer features
+            features = []
+            labels = []
+
+            for idx, game in df.iterrows():
+                feature_vector = [
+                    1,  # Home field advantage
+                    float(game.get('same_conf', 0)),
+                    float(game.get('same_div', 0)),
+                    (game['season'] - 2015) / 10.0,  # Normalize season
+                    game['week'] / 18.0,  # Normalize week
+                    float(game.get('spread', 0.0)),
+                    float(game.get('over_under', 45.0)) / 100.0,  # Normalize
+                ]
+
+                # Pad to 25 features for compatibility
+                feature_vector.extend([0.0] * (25 - len(feature_vector)))
+
+                features.append(feature_vector)
+                labels.append(int(game['home_won']))
+
+            X = np.array(features)
+            y = np.array(labels)
+
+            logger.info(f"Created features: {X.shape}, labels: {y.shape}")
+            logger.info(f"Home win rate: {y.mean():.2%}")
+
+            return X, y
+
+        except Exception as e:
+            logger.error(f"Error loading training data: {e}")
+            logger.warning("Falling back to synthetic data")
+            return await self._generate_synthetic_data()
+
+    async def _generate_synthetic_data(self):
+        """Generate synthetic training data as fallback"""
+        logger.warning("Using synthetic training data")
 
         n_samples = 1000
         n_features = 25
 
-        # Generate random features
         X = np.random.rand(n_samples, n_features)
-
-        # Generate outcomes (home team wins)
-        # Slightly bias towards home team
         y = (X[:, 0] + X[:, 4] + np.random.rand(n_samples) * 0.5 > 1.0).astype(int)
 
         return X, y
