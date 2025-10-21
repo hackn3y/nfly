@@ -34,13 +34,13 @@ app.use(helmet({
 }));
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.FRONTEND_URL || '').split(',').map(url => url.trim())
+  ? (process.env.FRONTEND_URL || 'https://nfly.netlify.app').split(',').map(url => url.trim())
   : true; // Allow all origins in development
 
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
