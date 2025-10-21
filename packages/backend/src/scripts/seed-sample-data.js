@@ -160,7 +160,7 @@ async function seedSampleData() {
         `INSERT INTO predictions (
           game_id, predicted_home_score, predicted_away_score,
           predicted_winner, spread_prediction, over_under_prediction,
-          confidence_score, key_factors, model_version,
+          confidence, ml_features, model_version,
           created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ensemble-v1', NOW(), NOW())`,
         [
@@ -171,7 +171,7 @@ async function seedSampleData() {
           pred.spread,
           pred.overUnder,
           pred.confidence,
-          JSON.stringify(pred.keyFactors)
+          JSON.stringify({ keyFactors: pred.keyFactors })
         ]
       );
     }
