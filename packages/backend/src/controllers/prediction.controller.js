@@ -8,17 +8,26 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5000';
 // Get upcoming game predictions
 exports.getUpcomingPredictions = async (req, res, next) => {
   try {
-    const redis = getRedisClient();
+    let redis;
+    try {
+      redis = getRedisClient();
+    } catch (err) {
+      // Redis not available, continue without cache
+      redis = null;
+    }
+
     const cacheKey = 'predictions:upcoming';
 
-    // Try cache first
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return res.json({
-        success: true,
-        data: JSON.parse(cached),
-        cached: true
-      });
+    // Try cache first (if Redis is available)
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return res.json({
+          success: true,
+          data: JSON.parse(cached),
+          cached: true
+        });
+      }
     }
 
     // Call ML service
@@ -28,8 +37,10 @@ exports.getUpcomingPredictions = async (req, res, next) => {
 
     const predictions = mlResponse.data;
 
-    // Cache for 30 minutes
-    await redis.setEx(cacheKey, 1800, JSON.stringify(predictions));
+    // Cache for 30 minutes (if Redis is available)
+    if (redis) {
+      await redis.setEx(cacheKey, 1800, JSON.stringify(predictions));
+    }
 
     res.json({
       success: true,
@@ -46,17 +57,25 @@ exports.getUpcomingPredictions = async (req, res, next) => {
 exports.getGamePrediction = async (req, res, next) => {
   try {
     const { gameId } = req.params;
-    const redis = getRedisClient();
+    let redis;
+    try {
+      redis = getRedisClient();
+    } catch (err) {
+      redis = null;
+    }
+
     const cacheKey = `prediction:game:${gameId}`;
 
-    // Try cache
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return res.json({
-        success: true,
-        data: JSON.parse(cached),
-        cached: true
-      });
+    // Try cache (if Redis is available)
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return res.json({
+          success: true,
+          data: JSON.parse(cached),
+          cached: true
+        });
+      }
     }
 
     // Call ML service
@@ -66,8 +85,10 @@ exports.getGamePrediction = async (req, res, next) => {
 
     const prediction = mlResponse.data;
 
-    // Cache for 15 minutes
-    await redis.setEx(cacheKey, 900, JSON.stringify(prediction));
+    // Cache for 15 minutes (if Redis is available)
+    if (redis) {
+      await redis.setEx(cacheKey, 900, JSON.stringify(prediction));
+    }
 
     res.json({
       success: true,
