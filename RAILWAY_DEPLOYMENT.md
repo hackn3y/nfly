@@ -103,7 +103,7 @@ RATE_LIMIT_MAX_REQUESTS=100
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 MONGODB_URI=${{MongoDB.MONGODB_URI}}
 REDIS_URL=${{Redis.REDIS_URL}}
-ML_SERVICE_URL=${{ML_Service.RAILWAY_PRIVATE_URL}}
+ML_SERVICE_URL=http://${{ml-service.RAILWAY_PRIVATE_DOMAIN}}:8080
 ```
 
 ---
@@ -153,7 +153,7 @@ ML_SERVICE_URL=${{ML_Service.RAILWAY_PRIVATE_URL}}
 1. Click service → "Settings"
 2. **Dockerfile Path**: `Dockerfile.ml`
 3. **Root Directory**: Leave blank
-4. **Port**: `5000`
+4. **Port**: `8080` (Railway sets PORT=8080 automatically)
 
 #### Add ML Environment Variables
 
@@ -464,15 +464,17 @@ postgresql://user:password@host:port/database
 - Database connection timeout
 - Port already in use (shouldn't happen on Railway)
 
-### ML Service Can't Connect
+### ML Service Can't Connect (502 Bad Gateway)
 
-**Verify private URL:**
+**Verify private domain URL:**
 ```bash
 # Backend should use:
-ML_SERVICE_URL=${{ML_Service.RAILWAY_PRIVATE_URL}}
+ML_SERVICE_URL=http://${{ml-service.RAILWAY_PRIVATE_DOMAIN}}:8080
 ```
 
-**Not** the public URL!
+Where `ml-service` is the exact name of your ML service in Railway.
+
+**Not** the public URL! The ML service should be private-only for security.
 
 ---
 
