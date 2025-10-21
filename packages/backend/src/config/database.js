@@ -10,9 +10,13 @@ async function connectPostgres() {
   try {
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      max: 20,
+      max: process.env.PG_POOL_MAX || 20,
+      min: process.env.PG_POOL_MIN || 2,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
+      // Enable prepared statements for performance
+      statement_timeout: 30000,
+      query_timeout: 30000,
     });
 
     // Test connection

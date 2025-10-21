@@ -66,7 +66,7 @@ jobs:
           MONGODB_URI: mongodb://localhost:27017/nfl_predictor_test
           REDIS_URL: redis://localhost:6379/1
           JWT_SECRET: test-secret-key-for-ci
-        run: npm test -- --coverage
+        run: npm test -- --coverage --maxWorkers=2
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -153,7 +153,7 @@ jobs:
 
       - name: Run tests
         working-directory: ./packages/mobile
-        run: npm test -- --coverage --watchAll=false
+        run: npm test -- --coverage --watchAll=false --maxWorkers=2
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
