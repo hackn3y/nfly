@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import predictionsReducer from './slices/predictionsSlice';
 import gematriaReducer from './slices/gematriaSlice';
 import userReducer from './slices/userSlice';
+import bankrollReducer from './slices/bankrollSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     predictions: predictionsReducer,
     gematria: gematriaReducer,
     user: userReducer,
+    bankroll: bankrollReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
