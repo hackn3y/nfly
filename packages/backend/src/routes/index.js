@@ -11,6 +11,7 @@ const nflDataRoutes = require('./nfl-data.routes');
 const webhookRoutes = require('./webhook.routes');
 const transparencyRoutes = require('./transparency.routes');
 const adminRoutes = require('./admin.routes');
+const bankrollRoutes = require('./bankroll.routes');
 
 // API documentation
 router.get('/', (req, res) => {
@@ -23,7 +24,8 @@ router.get('/', (req, res) => {
       gematria: '/api/gematria',
       users: '/api/users',
       subscriptions: '/api/subscriptions',
-      nflData: '/api/nfl-data'
+      nflData: '/api/nfl-data',
+      bankroll: '/api/bankroll'
     },
     documentation: '/api/docs'
   });
@@ -39,5 +41,6 @@ router.use('/nfl-data', nflDataRoutes);
 router.use('/webhooks', webhookRoutes);
 router.use('/transparency', transparencyRoutes);
 router.use('/admin', adminRoutes);
+router.use('/bankroll', bankrollRoutes);
 
 module.exports = router;
