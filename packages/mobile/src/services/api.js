@@ -1,6 +1,6 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import storage from '../utils/storage';
 
 const resolveApiUrl = () => {
   const expoConfig = Constants.expoConfig ?? {};
@@ -46,7 +46,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const token = await storage.getItemAsync(TOKEN_KEY);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -67,7 +67,7 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Token expired, clear and redirect to login
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await storage.deleteItemAsync(TOKEN_KEY);
       // You might want to dispatch a logout action here
     }
     return Promise.reject(error);

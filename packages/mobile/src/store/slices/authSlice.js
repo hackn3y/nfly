@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import * as SecureStore from 'expo-secure-store';
+import storage from '../../utils/storage';
 import api from '../../services/api';
 
 const TOKEN_KEY = 'auth_token';
@@ -10,7 +10,7 @@ export const register = createAsyncThunk(
     try {
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data.data;
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      await storage.setItemAsync(TOKEN_KEY, token);
       return { token, user };
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || 'Registration failed');
@@ -24,12 +24,12 @@ export const login = createAsyncThunk(
     try {
       console.log('[authSlice] login thunk called with:', credentials.email);
       console.log('[authSlice] API URL:', api.defaults.baseURL);
-      
+
       const response = await api.post('/auth/login', credentials);
       console.log('[authSlice] Login response:', response.data);
-      
+
       const { token, user } = response.data.data;
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      await storage.setItemAsync(TOKEN_KEY, token);
       return { token, user };
     } catch (error) {
       console.error('[authSlice] Login error:', error);
@@ -44,10 +44,10 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await api.post('/auth/logout');
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await storage.deleteItemAsync(TOKEN_KEY);
     } catch (error) {
       // Still logout locally even if API call fails
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await storage.deleteItemAsync(TOKEN_KEY);
     }
   }
 );
@@ -55,7 +55,7 @@ export const logout = createAsyncThunk(
 export const loadToken = createAsyncThunk(
   'auth/loadToken',
   async () => {
-    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    const token = await storage.getItemAsync(TOKEN_KEY);
     if (token) {
       const response = await api.get('/auth/me');
       return { token, user: response.data.data };
