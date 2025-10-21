@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "start:prod": "npm run reset-failed-migration; npm run migrate && node src/server.js",
+    "start:prod": "node src/db/wait-for-postgres.js && npm run reset-failed-migration; npm run migrate && node src/server.js",
+    "wait-for-db": "node src/db/wait-for-postgres.js",
     "reset-failed-migration": "node src/db/reset-failed-migration.js || true",
     "dev": "nodemon src/server.js",
     "test": "jest --coverage",
