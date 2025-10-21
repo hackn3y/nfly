@@ -114,7 +114,11 @@ const handleSubscriptionUpdated = async (subscription) => {
   if (result.rows.length > 0) {
     const { email, subscription_tier } = result.rows[0];
     logger.info(`User ${email} subscription changed to ${subscription_tier}`);
-    // TODO: Send notification email
+
+    // Send subscription update notification
+    const amount = subscription.items.data[0].price.unit_amount;
+    emailService.sendSubscriptionConfirmation(email, subscription_tier, amount)
+      .catch(err => logger.error(`Failed to send subscription update email: ${err.message}`));
   }
 };
 
@@ -143,8 +147,19 @@ const handleSubscriptionDeleted = async (subscription) => {
     );
 
     if (result.rows.length > 0) {
-      logger.info(`User ${result.rows[0].email} downgraded to free tier`);
-      // TODO: Send cancellation confirmation email
+      const email = result.rows[0].email;
+      logger.info(`User ${email} downgraded to free tier`);
+
+      // Send cancellation confirmation email
+      const endDate = subscription.current_period_end * 1000; // Convert to milliseconds
+      const priceId = subscription.items.data[0].price.id;
+      let tier = 'free';
+      if (priceId === process.env.STRIPE_PRICE_STARTER) tier = 'starter';
+      else if (priceId === process.env.STRIPE_PRICE_PREMIUM) tier = 'premium';
+      else if (priceId === process.env.STRIPE_PRICE_PRO) tier = 'pro';
+
+      emailService.sendSubscriptionCancelled(email, tier, endDate)
+        .catch(err => logger.error(`Failed to send cancellation email: ${err.message}`));
     }
   } catch (error) {
     logger.error(`Error handling subscription deletion: ${error.message}`);
@@ -188,7 +203,19 @@ const handlePaymentSucceeded = async (invoice) => {
     );
 
     logger.info(`Recorded payment for customer ${invoice.customer}`);
-    // TODO: Send payment receipt email
+
+    // Send payment receipt (optional - Stripe already sends receipts)
+    // Uncomment if you want custom receipt emails
+    /*
+    const userResult = await pool.query(
+      'SELECT email FROM users WHERE stripe_customer_id = $1',
+      [invoice.customer]
+    );
+    if (userResult.rows.length > 0) {
+      const email = userResult.rows[0].email;
+      // Custom receipt logic here if needed
+    }
+    */
   } catch (error) {
     logger.error(`Error recording payment: ${error.message}`);
   }
