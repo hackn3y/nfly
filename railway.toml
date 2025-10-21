@@ -13,4 +13,4 @@ port = 4100
 
 [[deploy.healthcheck]]
 httpPath = "/health"
-port = 5000
+port = 8080
