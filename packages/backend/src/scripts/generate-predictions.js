@@ -75,18 +75,18 @@ async function generatePredictions(limit = null) {
             predicted_winner,
             spread_prediction,
             over_under_prediction,
-            confidence_score,
-            key_factors,
+            confidence,
+            ml_features,
             model_version,
-            model_breakdown,
             created_at,
             updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-          ON CONFLICT (game_id, model_version) DO UPDATE SET
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          ON CONFLICT (game_id) DO UPDATE SET
             predicted_home_score = EXCLUDED.predicted_home_score,
             predicted_away_score = EXCLUDED.predicted_away_score,
             predicted_winner = EXCLUDED.predicted_winner,
-            confidence_score = EXCLUDED.confidence_score,
+            confidence = EXCLUDED.confidence,
+            ml_features = EXCLUDED.ml_features,
             updated_at = NOW()`,
           [
             game.id,
@@ -96,9 +96,11 @@ async function generatePredictions(limit = null) {
             prediction.spread_prediction,
             prediction.over_under_prediction,
             prediction.confidence,
-            JSON.stringify(prediction.key_factors || []),
-            'ensemble-v1',
-            JSON.stringify(prediction.model_breakdown || {})
+            JSON.stringify({
+              key_factors: prediction.key_factors || [],
+              model_breakdown: prediction.model_breakdown || {}
+            }),
+            'ensemble-v1'
           ]
         );
 
@@ -143,10 +145,10 @@ async function generatePredictions(limit = null) {
     const stats = await pool.query(`
       SELECT
         COUNT(*) as total_predictions,
-        AVG(confidence_score)::numeric(10,2) as avg_confidence,
-        COUNT(*) FILTER (WHERE confidence_score >= 0.70) as high_confidence,
-        COUNT(*) FILTER (WHERE confidence_score >= 0.60 AND confidence_score < 0.70) as medium_confidence,
-        COUNT(*) FILTER (WHERE confidence_score < 0.60) as low_confidence
+        AVG(confidence)::numeric(10,2) as avg_confidence,
+        COUNT(*) FILTER (WHERE confidence >= 0.70) as high_confidence,
+        COUNT(*) FILTER (WHERE confidence >= 0.60 AND confidence < 0.70) as medium_confidence,
+        COUNT(*) FILTER (WHERE confidence < 0.60) as low_confidence
       FROM predictions p
       JOIN games g ON p.game_id = g.id
       WHERE g.status = 'scheduled' AND g.game_date > NOW()
@@ -169,12 +171,12 @@ async function generatePredictions(limit = null) {
         g.away_team,
         g.game_date,
         p.predicted_winner,
-        p.confidence_score,
+        p.confidence,
         p.spread_prediction
       FROM predictions p
       JOIN games g ON p.game_id = g.id
       WHERE g.status = 'scheduled' AND g.game_date > NOW()
-      ORDER BY p.confidence_score DESC
+      ORDER BY p.confidence DESC
       LIMIT 5
     `);
 
@@ -184,7 +186,7 @@ async function generatePredictions(limit = null) {
         const winner = pred.predicted_winner === 'home' ? pred.home_team : pred.away_team;
         const spread = pred.spread_prediction;
         console.log(`  ${i + 1}. ${pred.away_team} @ ${pred.home_team}`);
-        console.log(`     Winner: ${winner} (${(pred.confidence_score * 100).toFixed(1)}% confidence)`);
+        console.log(`     Winner: ${winner} (${(pred.confidence * 100).toFixed(1)}% confidence)`);
         console.log(`     Spread: ${spread > 0 ? '+' : ''}${spread}`);
         console.log('');
       });
