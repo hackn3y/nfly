@@ -92,7 +92,15 @@ async function backfillAndTestAccuracy(season, week) {
         const actualWinner = game.home_score > game.away_score ? 'home' :
                            game.away_score > game.home_score ? 'away' : 'tie';
 
-        const correct = prediction.predicted_winner === actualWinner;
+        // Normalize predicted winner to home/away
+        let normalizedPrediction = prediction.predicted_winner;
+        if (prediction.predicted_winner === game.home_team) {
+          normalizedPrediction = 'home';
+        } else if (prediction.predicted_winner === game.away_team) {
+          normalizedPrediction = 'away';
+        }
+
+        const correct = normalizedPrediction === actualWinner;
 
         predictions.push({
           game,
