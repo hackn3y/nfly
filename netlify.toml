@@ -1,0 +1,9 @@
+[build]
+  base = "packages/mobile"
+  command = "npm run build:web"
+  publish = "web-build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

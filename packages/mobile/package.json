@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-  "start": "expo start --port 8100",
-  "android": "expo start --android --port 8100",
-  "ios": "expo start --ios --port 8100",
-  "web": "expo start --web --port 8100",
+    "start": "expo start --port 8100",
+    "android": "expo start --android --port 8100",
+    "ios": "expo start --ios --port 8100",
+    "web": "expo start --web --port 8100",
+    "build:web": "expo export:web",
     "test": "jest",
     "lint": "eslint ."
   },
