@@ -13,9 +13,18 @@ export default function PredictionsScreen() {
 
   // Get current NFL season and week based on actual data
   const getCurrentNFLWeek = () => {
-    // For now, default to 2025 season Week 10 (where we have data)
-    // In production, this should query the backend for current week
-    return { season: 2025, week: 10 };
+    // NFL 2025 season started September 4, 2025
+    const seasonStart = new Date('2025-09-04');
+    const now = new Date();
+
+    // Calculate weeks since season start
+    const daysSinceStart = Math.floor((now - seasonStart) / (1000 * 60 * 60 * 24));
+    const weeksSinceStart = Math.floor(daysSinceStart / 7);
+
+    // Week 1 starts on Sept 4, so current week is weeksSinceStart + 1
+    const currentWeek = Math.min(Math.max(weeksSinceStart + 1, 1), 18);
+
+    return { season: 2025, week: currentWeek };
   };
 
   useEffect(() => {
@@ -32,17 +41,43 @@ export default function PredictionsScreen() {
     }
   };
 
-  const handleWeekChange = (direction) => {
+  const handleWeekChange = async (direction) => {
     let newWeek = currentWeek + direction;
+    const maxAttempts = 5; // Maximum weeks to check before giving up
+    let attempts = 0;
 
     // Keep navigating until we find a week with games or hit boundaries
-    while (newWeek >= 1 && newWeek <= 18) {
-      console.log('[PredictionsScreen] Checking Week', newWeek);
-      dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
-      dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason }));
-      setViewMode('weekly');
-      break; // For now just go one week at a time
-      // TODO: Could add logic to check if week has games and skip if empty
+    while (newWeek >= 1 && newWeek <= 18 && attempts < maxAttempts) {
+      attempts++;
+
+      try {
+        console.log('[PredictionsScreen] Checking Week', newWeek);
+
+        // Fetch the week's predictions to check if it has games
+        const result = await dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason })).unwrap();
+
+        // If this week has games, use it
+        if (result && result.length > 0) {
+          dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
+          setViewMode('weekly');
+          break;
+        } else {
+          // No games this week, try the next week in the same direction
+          console.log(`[PredictionsScreen] Week ${newWeek} has no games, trying next week`);
+          newWeek += direction;
+        }
+      } catch (error) {
+        console.error(`[PredictionsScreen] Error fetching Week ${newWeek}:`, error);
+        // If there's an error, just set the week anyway
+        dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
+        setViewMode('weekly');
+        break;
+      }
+    }
+
+    // If we've exhausted all attempts, stay on current week
+    if (attempts >= maxAttempts) {
+      console.log('[PredictionsScreen] No weeks with games found in search range');
     }
   };
 
@@ -55,7 +90,34 @@ export default function PredictionsScreen() {
     }
   };
 
-  const displayPredictions = viewMode === 'upcoming' ? upcoming : weekly;
+  // Apply filters to predictions
+  const getFilteredPredictions = () => {
+    const predictions = viewMode === 'upcoming' ? upcoming : weekly;
+
+    if (!predictions || predictions.length === 0) return [];
+
+    switch (selectedFilter) {
+      case 'high':
+        return predictions.filter(p => (p.confidence || 0) >= 0.7);
+      case 'underdogs':
+        return predictions.filter(p => {
+          // Underdog is the team with lower win probability
+          const homeWinProb = p.home_win_probability || 0.5;
+          return homeWinProb < 0.5;
+        });
+      case 'favorites':
+        return predictions.filter(p => {
+          // Favorite is the team with higher win probability
+          const homeWinProb = p.home_win_probability || 0.5;
+          return homeWinProb > 0.5;
+        });
+      case 'all':
+      default:
+        return predictions;
+    }
+  };
+
+  const displayPredictions = getFilteredPredictions();
 
   return (
     <View style={styles.container}>

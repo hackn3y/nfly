@@ -54,7 +54,29 @@ router.get(
 router.get(
   '/player-props',
   requirePlayerProps,
-  predictionController.getPlayerProps || ((req, res) => res.status(501).json({ message: 'Player props coming soon' }))
+  predictionController.getPlayerProps
+);
+
+/**
+ * @route   GET /api/predictions/props/:gameId
+ * @desc    Get player prop predictions for specific game
+ * @access  Private (Premium+ only)
+ */
+router.get(
+  '/props/:gameId',
+  requirePlayerProps,
+  predictionController.getPlayerProps
+);
+
+/**
+ * @route   GET /api/predictions/props
+ * @desc    Get all player prop predictions
+ * @access  Private (Premium+ only)
+ */
+router.get(
+  '/props',
+  requirePlayerProps,
+  predictionController.getPlayerProps
 );
 
 /**
@@ -65,7 +87,7 @@ router.get(
 router.get(
   '/live',
   requireLivePredictions,
-  predictionController.getLivePredictions || ((req, res) => res.status(501).json({ message: 'Live predictions coming soon' }))
+  predictionController.getLivePredictions
 );
 
 /**

@@ -12,6 +12,8 @@ const webhookRoutes = require('./webhook.routes');
 const transparencyRoutes = require('./transparency.routes');
 const adminRoutes = require('./admin.routes');
 const bankrollRoutes = require('./bankroll.routes');
+const cacheRoutes = require('./cache.routes');
+const notificationRoutes = require('./notification.routes');
 
 // API documentation
 router.get('/', (req, res) => {
@@ -42,5 +44,7 @@ router.use('/webhooks', webhookRoutes);
 router.use('/transparency', transparencyRoutes);
 router.use('/admin', adminRoutes);
 router.use('/bankroll', bankrollRoutes);
+router.use('/cache', cacheRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;

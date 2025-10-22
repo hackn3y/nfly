@@ -91,6 +91,11 @@ export default function ProfileScreen({ navigation }) {
           onPress={() => navigation.navigate('Preferences')}
         />
         <MenuItem
+          icon="lock-reset"
+          label="Change Password"
+          onPress={() => navigation.navigate('ChangePassword')}
+        />
+        <MenuItem
           icon="chart-line"
           label="My Statistics"
           onPress={() => navigation.navigate('MyStatistics')}
@@ -103,7 +108,7 @@ export default function ProfileScreen({ navigation }) {
         <MenuItem
           icon="bell"
           label="Notifications"
-          onPress={() => Alert.alert('Coming Soon', 'Notifications feature is under development')}
+          onPress={() => navigation.navigate('Preferences')}
         />
         <MenuItem
           icon="help-circle"

@@ -3,22 +3,26 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { fetchUpcomingPredictions } from '../../store/slices/predictionsSlice';
+import { fetchTransparencyStats } from '../../store/slices/transparencySlice';
 import { colors, spacing, typography } from '../../theme';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const { upcoming, loading, error } = useSelector((state) => state.predictions);
+  const { stats } = useSelector((state) => state.transparency);
   const { user, isAuthenticated, token } = useSelector((state) => state.auth);
 
   useEffect(() => {
     // Only fetch predictions if user is authenticated and has a token
     if (isAuthenticated && token) {
       dispatch(fetchUpcomingPredictions());
+      dispatch(fetchTransparencyStats());
     }
   }, [isAuthenticated, token]);
 
   const handleRefresh = () => {
     dispatch(fetchUpcomingPredictions());
+    dispatch(fetchTransparencyStats());
   };
 
   return (
@@ -43,9 +47,21 @@ export default function HomeScreen({ navigation }) {
 
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
-        <StatCard icon="chart-line" label="Accuracy" value="68%" />
-        <StatCard icon="football" label="Games" value="12" />
-        <StatCard icon="trophy" label="Wins" value="8" />
+        <StatCard
+          icon="chart-line"
+          label="Accuracy"
+          value={stats?.overall?.accuracy ? `${stats.overall.accuracy}%` : '---'}
+        />
+        <StatCard
+          icon="football"
+          label="Games"
+          value={stats?.overall?.total_predictions || '---'}
+        />
+        <StatCard
+          icon="trophy"
+          label="Wins"
+          value={stats?.overall?.correct || '---'}
+        />
       </View>
 
       {/* Featured Predictions */}

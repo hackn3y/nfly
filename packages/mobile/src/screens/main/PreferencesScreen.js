@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useDispatch } from 'react-redux';
 import api from '../../services/api';
 import { spacing, typography } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function PreferencesScreen({ navigation }) {
   const { isDarkMode, toggleTheme, colors } = useTheme();
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState({
@@ -50,6 +53,35 @@ export default function PreferencesScreen({ navigation }) {
 
   const togglePreference = (key) => {
     setPreferences({ ...preferences, [key]: !preferences[key] });
+  };
+
+  const clearCache = async () => {
+    try {
+      // Clear AsyncStorage cache (excluding auth token)
+      const keys = await AsyncStorage.getAllKeys();
+      const cacheKeys = keys.filter(key =>
+        key.startsWith('predictions_') ||
+        key.startsWith('gematria_') ||
+        key.startsWith('cache_') ||
+        key.startsWith('data_')
+      );
+
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+      }
+
+      // Optionally clear backend cache via API
+      try {
+        await api.post('/cache/clear');
+      } catch (apiError) {
+        console.log('Backend cache clear not available:', apiError);
+      }
+
+      Alert.alert('Success', `Cleared ${cacheKeys.length} cached items. Refresh your data to see updated predictions.`);
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      Alert.alert('Error', 'Failed to clear cache completely');
+    }
   };
 
   return (
@@ -155,10 +187,14 @@ export default function PreferencesScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.actionItem}
-            onPress={() => Alert.alert('Clear Cache', 'This will clear all cached predictions and data.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Clear', style: 'destructive', onPress: () => Alert.alert('Success', 'Cache cleared') }
-            ])}
+            onPress={() => Alert.alert(
+              'Clear Cache',
+              'This will clear all cached predictions and data. You will need to refresh to see updated data.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Clear', style: 'destructive', onPress: clearCache }
+              ]
+            )}
           >
             <View style={styles.actionItemLeft}>
               <Icon name="delete-sweep" size={24} color={colors.warning} />

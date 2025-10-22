@@ -225,3 +225,123 @@ exports.getModelStats = async (req, res, next) => {
     next(new AppError('Failed to fetch model statistics', 500));
   }
 };
+
+/**
+ * Get live in-progress game predictions
+ */
+exports.getLivePredictions = async (req, res, next) => {
+  try {
+    const pool = getPostgresPool();
+
+    // Get games that are currently in progress
+    const gamesQuery = `
+      SELECT
+        g.id as game_id,
+        g.season,
+        g.week,
+        g.home_team,
+        g.away_team,
+        g.home_score,
+        g.away_score,
+        g.game_date,
+        g.status,
+        g.period,
+        p.predicted_winner,
+        p.home_win_probability,
+        p.away_win_probability,
+        p.confidence_score as confidence,
+        p.spread_prediction,
+        p.over_under_prediction,
+        p.predicted_score
+      FROM games g
+      LEFT JOIN predictions p ON g.id = p.game_id
+      WHERE g.status = 'in_progress'
+      ORDER BY g.game_date ASC
+    `;
+
+    const result = await pool.query(gamesQuery);
+
+    res.json({
+      success: true,
+      data: result.rows.map(row => ({
+        id: row.game_id,
+        game_id: row.game_id,
+        season: row.season,
+        week: row.week,
+        home_team: row.home_team,
+        away_team: row.away_team,
+        home_score: row.home_score || 0,
+        away_score: row.away_score || 0,
+        game_date: row.game_date,
+        status: row.status,
+        period: row.period,
+        prediction: {
+          predicted_winner: row.predicted_winner,
+          home_win_probability: row.home_win_probability,
+          away_win_probability: row.away_win_probability,
+          confidence: row.confidence,
+          spread_prediction: row.spread_prediction,
+          over_under_prediction: row.over_under_prediction,
+          predicted_score: row.predicted_score
+        }
+      }))
+    });
+  } catch (error) {
+    logger.error('Error fetching live predictions:', error);
+    next(new AppError('Failed to fetch live predictions', 500));
+  }
+};
+
+/**
+ * Get player prop predictions
+ */
+exports.getPlayerProps = async (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const pool = getPostgresPool();
+
+    // For now, return empty array with message that this feature is coming
+    // In production, this would query player_props table and ML predictions
+
+    let query = `
+      SELECT
+        pp.id,
+        pp.game_id,
+        pp.player_name,
+        pp.team,
+        pp.prop_type,
+        pp.line,
+        pp.prediction,
+        pp.recommendation,
+        pp.confidence,
+        pp.key_factors
+      FROM player_props pp
+      WHERE 1=1
+    `;
+
+    const params = [];
+
+    if (gameId) {
+      params.push(gameId);
+      query += ` AND pp.game_id = $${params.length}`;
+    }
+
+    query += ' ORDER BY pp.confidence DESC, pp.player_name ASC';
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      message: result.rows.length === 0 ? 'No player props available. This feature requires ML service enhancement.' : undefined
+    });
+  } catch (error) {
+    // If table doesn't exist, return empty array
+    logger.info('Player props table may not exist:', error.message);
+    res.json({
+      success: true,
+      data: [],
+      message: 'Player props feature is not yet configured'
+    });
+  }
+};

@@ -12,6 +12,12 @@ import PredictionHistoryScreen from '../screens/main/PredictionHistoryScreen';
 import MyStatisticsScreen from '../screens/main/MyStatisticsScreen';
 import FavoriteTeamsScreen from '../screens/main/FavoriteTeamsScreen';
 import PreferencesScreen from '../screens/main/PreferencesScreen';
+import BetHistoryScreen from '../screens/main/BetHistoryScreen';
+import PlaceBetScreen from '../screens/main/PlaceBetScreen';
+import BetDetailScreen from '../screens/main/BetDetailScreen';
+import LivePredictionsScreen from '../screens/main/LivePredictionsScreen';
+import PlayerPropsScreen from '../screens/main/PlayerPropsScreen';
+import ChangePasswordScreen from '../screens/main/ChangePasswordScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -31,6 +37,12 @@ function ProfileStack() {
       <Stack.Screen name="MyStatistics" component={MyStatisticsScreen} />
       <Stack.Screen name="FavoriteTeams" component={FavoriteTeamsScreen} />
       <Stack.Screen name="Preferences" component={PreferencesScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="BetHistory" component={BetHistoryScreen} />
+      <Stack.Screen name="PlaceBet" component={PlaceBetScreen} />
+      <Stack.Screen name="BetDetail" component={BetDetailScreen} />
+      <Stack.Screen name="LivePredictions" component={LivePredictionsScreen} />
+      <Stack.Screen name="PlayerProps" component={PlayerPropsScreen} />
     </Stack.Navigator>
   );
 }

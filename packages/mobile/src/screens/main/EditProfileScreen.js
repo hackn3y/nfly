@@ -103,7 +103,7 @@ export default function EditProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Security</Text>
           <TouchableOpacity
             style={styles.securityItem}
-            onPress={() => Alert.alert('Info', 'Password change coming soon')}
+            onPress={() => navigation.navigate('ChangePassword')}
           >
             <Icon name="lock-reset" size={24} color={colors.primary} />
             <Text style={styles.securityItemText}>Change Password</Text>

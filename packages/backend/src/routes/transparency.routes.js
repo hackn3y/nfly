@@ -5,6 +5,7 @@
 
 const express = require('express');
 const resultsUpdater = require('../jobs/update-results.job');
+const { protect, restrictTo } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -50,9 +51,8 @@ router.get('/trust-guide', async (req, res, next) => {
  * Trigger manual results update (admin only)
  * POST /api/transparency/update-results
  */
-router.post('/update-results', async (req, res, next) => {
+router.post('/update-results', protect, restrictTo('admin'), async (req, res, next) => {
   try {
-    // TODO: Add admin authentication
     const result = await resultsUpdater.updateCompletedGames();
 
     res.json({

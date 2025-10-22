@@ -67,4 +67,14 @@ router.post('/reset-password', [
  */
 router.get('/me', protect, authController.getCurrentUser);
 
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    Change user password
+ * @access  Private
+ */
+router.post('/change-password', protect, [
+  body('currentPassword').notEmpty(),
+  body('newPassword').isLength({ min: 8 })
+], authController.changePassword);
+
 module.exports = router;
