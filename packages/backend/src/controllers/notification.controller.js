@@ -204,14 +204,42 @@ exports.unregisterDevice = async (req, res, next) => {
 exports.sendTestNotification = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const pushService = require('../services/push-notification.service');
 
-    // In production, this would send an actual push notification
-    // For now, just log and return success
-    logger.info(`Test notification requested for user ${userId}`);
+    // Get user devices
+    const pool = getPostgresPool();
+    const devicesResult = await pool.query(
+      `SELECT push_token, device_type FROM user_devices WHERE user_id = $1 AND active = true`,
+      [userId]
+    );
+
+    if (devicesResult.rows.length === 0) {
+      return res.json({
+        success: false,
+        message: 'No active devices registered for push notifications'
+      });
+    }
+
+    // Send to all user devices
+    const results = await Promise.allSettled(
+      devicesResult.rows.map(device =>
+        pushService.sendPushNotification(
+          device.push_token,
+          'Test Notification',
+          'This is a test notification from NFL Predictor!',
+          { type: 'test' }
+        )
+      )
+    );
+
+    const successCount = results.filter(r => r.status === 'fulfilled').length;
+
+    logger.info(`Test notification sent to ${successCount}/${devicesResult.rows.length} devices for user ${userId}`);
 
     res.json({
       success: true,
-      message: 'Test notification sent (push notification service not yet configured)'
+      message: `Test notification sent to ${successCount} device(s)`,
+      devices: devicesResult.rows.length
     });
   } catch (error) {
     logger.error('Error sending test notification:', error);

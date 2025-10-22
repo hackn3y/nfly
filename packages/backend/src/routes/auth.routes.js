@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const authController = require('../controllers/auth.controller');
+const emailVerificationController = require('../controllers/email-verification.controller');
 const { protect } = require('../middleware/auth');
 
 /**
@@ -76,5 +77,21 @@ router.post('/change-password', protect, [
   body('currentPassword').notEmpty(),
   body('newPassword').isLength({ min: 8 })
 ], authController.changePassword);
+
+/**
+ * @route   GET /api/auth/verify-email/:token
+ * @desc    Verify email with token
+ * @access  Public
+ */
+router.get('/verify-email/:token', emailVerificationController.verifyEmail);
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend verification email
+ * @access  Public
+ */
+router.post('/resend-verification', [
+  body('email').isEmail().normalizeEmail()
+], emailVerificationController.resendVerification);
 
 module.exports = router;

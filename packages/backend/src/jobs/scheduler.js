@@ -7,6 +7,7 @@ const cron = require('node-cron');
 const logger = require('../utils/logger');
 const resultsUpdater = require('./update-results.job');
 const nflDataService = require('../services/nfl-data.service');
+const notificationJobs = require('./notification-jobs');
 
 class JobScheduler {
   constructor() {
@@ -30,6 +31,15 @@ class JobScheduler {
 
     // Clean up old cache data daily
     this.scheduleCacheCleanup();
+
+    // High confidence alerts (every hour during season)
+    this.scheduleHighConfidenceAlerts();
+
+    // Game start notifications (every 30 minutes)
+    this.scheduleGameStartNotifications();
+
+    // Process notification queue (every 5 minutes)
+    this.scheduleNotificationQueue();
 
     logger.info(`${this.jobs.length} jobs scheduled`);
   }
@@ -89,7 +99,7 @@ class JobScheduler {
     const job = cron.schedule('0 9 * * 1', async () => {
       try {
         logger.info('[CRON] Sending weekly summaries...');
-        await this.sendWeeklySummaries();
+        await notificationJobs.sendWeeklyDigest();
         logger.info('[CRON] Weekly summaries sent');
       } catch (error) {
         logger.error(`[CRON] Weekly summaries failed: ${error.message}`);
@@ -98,6 +108,61 @@ class JobScheduler {
 
     this.jobs.push(job);
     logger.info('Scheduled: Weekly summaries (Mondays 9 AM)');
+  }
+
+  /**
+   * High confidence prediction alerts
+   */
+  scheduleHighConfidenceAlerts() {
+    // Run every hour
+    const job = cron.schedule('0 * * * *', async () => {
+      try {
+        logger.info('[CRON] Checking for high confidence alerts...');
+        await notificationJobs.sendHighConfidenceAlerts();
+        logger.info('[CRON] High confidence alerts completed');
+      } catch (error) {
+        logger.error(`[CRON] High confidence alerts failed: ${error.message}`);
+      }
+    });
+
+    this.jobs.push(job);
+    logger.info('Scheduled: High confidence alerts (hourly)');
+  }
+
+  /**
+   * Game start notifications
+   */
+  scheduleGameStartNotifications() {
+    // Run every 30 minutes
+    const job = cron.schedule('*/30 * * * *', async () => {
+      try {
+        logger.info('[CRON] Checking for game start notifications...');
+        await notificationJobs.sendGameStartNotifications();
+        logger.info('[CRON] Game start notifications completed');
+      } catch (error) {
+        logger.error(`[CRON] Game start notifications failed: ${error.message}`);
+      }
+    });
+
+    this.jobs.push(job);
+    logger.info('Scheduled: Game start notifications (every 30 minutes)');
+  }
+
+  /**
+   * Process notification queue
+   */
+  scheduleNotificationQueue() {
+    // Run every 5 minutes
+    const job = cron.schedule('*/5 * * * *', async () => {
+      try {
+        await notificationJobs.processNotificationQueue();
+      } catch (error) {
+        logger.error(`[CRON] Notification queue processing failed: ${error.message}`);
+      }
+    });
+
+    this.jobs.push(job);
+    logger.info('Scheduled: Notification queue processing (every 5 minutes)');
   }
 
   /**

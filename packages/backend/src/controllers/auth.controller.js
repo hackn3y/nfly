@@ -58,6 +58,11 @@ exports.register = async (req, res, next) => {
     // Generate token
     const token = generateToken(user.id);
 
+    // Send verification email (async, don't wait)
+    const emailVerificationController = require('./email-verification.controller');
+    emailVerificationController.sendVerificationEmail(user.id, email, firstName || 'there')
+      .catch(err => logger.error(`Failed to send verification email: ${err.message}`));
+
     // Send welcome email (async, don't wait)
     emailService.sendWelcomeEmail(email, firstName || 'there')
       .catch(err => logger.error(`Failed to send welcome email: ${err.message}`));
@@ -72,9 +77,11 @@ exports.register = async (req, res, next) => {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          subscriptionTier: user.subscription_tier
+          subscriptionTier: user.subscription_tier,
+          emailVerified: false
         },
-        token
+        token,
+        message: 'Registration successful! Please check your email to verify your account.'
       }
     });
   } catch (error) {
