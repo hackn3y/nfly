@@ -17,6 +17,29 @@ async def lifespan(app: FastAPI):
     logger.info("Starting NFL Predictor ML Service...")
     await init_db()
     logger.info("Database connections established")
+
+    # Auto-train models if they don't exist
+    from pathlib import Path
+    models_dir = Path("models")
+    models_dir.mkdir(exist_ok=True)
+
+    if not (models_dir / "rf_model.joblib").exists():
+        logger.info("=" * 60)
+        logger.info("No trained models found - training models now...")
+        logger.info("This is a one-time operation that takes 5-10 minutes")
+        logger.info("=" * 60)
+        try:
+            from services.model_service import ModelService
+            model_service = ModelService()
+            result = await model_service.train_models()
+            logger.info("✅ Model training complete!")
+            logger.info(f"Training results: {result}")
+        except Exception as e:
+            logger.error(f"❌ Model training failed: {e}")
+            logger.warning("Will use baseline predictions until models are trained manually")
+    else:
+        logger.info("✅ Models found, skipping training")
+
     yield
     # Shutdown
     logger.info("Shutting down ML Service...")
