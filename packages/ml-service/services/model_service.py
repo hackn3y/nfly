@@ -190,6 +190,7 @@ class ModelService:
             logger.info("Loading historical game data from database...")
             conn = get_postgres_connection()
 
+            # Simplified query for games without team IDs
             query = """
                 SELECT
                     g.id,
@@ -197,16 +198,13 @@ class ModelService:
                     g.week,
                     g.home_score,
                     g.away_score,
-                    g.spread,
-                    g.over_under,
-                    CASE WHEN g.home_team_id = ht.id AND ht.conference = at.conference THEN 1 ELSE 0 END as same_conf,
-                    CASE WHEN g.home_team_id = ht.id AND ht.division = at.division THEN 1 ELSE 0 END as same_div,
+                    COALESCE(g.spread, 0) as spread,
+                    COALESCE(g.over_under, 45) as over_under,
+                    0 as same_conf,
+                    0 as same_div,
                     CASE WHEN g.home_score > g.away_score THEN 1 ELSE 0 END as home_won
                 FROM games g
-                JOIN teams ht ON g.home_team_id = ht.id
-                JOIN teams at ON g.away_team_id = at.id
-                WHERE g.season >= 2015
-                  AND g.status = 'final'
+                WHERE g.status = 'final'
                   AND g.home_score IS NOT NULL
                   AND g.away_score IS NOT NULL
                 ORDER BY g.season, g.week
