@@ -70,4 +70,11 @@ router.post('/push-token', protect, async (req, res, next) => {
   }
 });
 
+/**
+ * @route   GET /api/users/export/:dataType
+ * @desc    Export user data
+ * @access  Private
+ */
+router.get('/export/:dataType', protect, userController.exportData);
+
 module.exports = router;

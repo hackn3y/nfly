@@ -5,6 +5,7 @@ import { Platform, View } from 'react-native';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { colors } from '../theme';
 
 const Stack = createStackNavigator();
@@ -34,6 +35,7 @@ export default function AuthNavigator() {
 
     return (
       <View style={{ flex: 1 }}>
+        {currentScreen === 'Onboarding' && <OnboardingScreen navigation={navigation} />}
         {currentScreen === 'Welcome' && <WelcomeScreen navigation={navigation} />}
         {currentScreen === 'Login' && <LoginScreen navigation={navigation} />}
         {currentScreen === 'Register' && <RegisterScreen navigation={navigation} />}
@@ -43,6 +45,7 @@ export default function AuthNavigator() {
 
   return (
     <Stack.Navigator
+      initialRouteName="Onboarding"
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.background,
@@ -53,6 +56,11 @@ export default function AuthNavigator() {
         },
       }}
     >
+      <Stack.Screen
+        name="Onboarding"
+        component={OnboardingScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}

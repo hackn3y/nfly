@@ -57,7 +57,7 @@ export default function ProfileScreen({ navigation }) {
             </Text>
           </View>
           {subscriptionTier !== 'pro' && (
-            <TouchableOpacity style={styles.upgradeButton}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={() => navigation.navigate('Subscription')}>
               <Text style={styles.upgradeButtonText}>Upgrade</Text>
             </TouchableOpacity>
           )}
@@ -113,17 +113,42 @@ export default function ProfileScreen({ navigation }) {
         <MenuItem
           icon="help-circle"
           label="Help & Support"
-          onPress={() => Alert.alert('Help & Support', 'For support, please email: support@nflpredictor.com\n\nOr visit our documentation at:\nhttps://docs.nflpredictor.com')}
+          onPress={() => navigation.navigate('HelpSupport')}
         />
         <MenuItem
           icon="shield-check"
           label="Privacy Policy"
-          onPress={() => Alert.alert('Privacy Policy', 'View our privacy policy at:\nhttps://nflpredictor.com/privacy')}
+          onPress={() => navigation.navigate('PrivacyPolicy')}
         />
         <MenuItem
           icon="file-document"
           label="Terms of Service"
-          onPress={() => Alert.alert('Terms of Service', 'View our terms of service at:\nhttps://nflpredictor.com/terms')}
+          onPress={() => navigation.navigate('TermsOfService')}
+        />
+        <MenuItem
+          icon="trophy"
+          label="Leaderboard"
+          onPress={() => navigation.navigate('Leaderboard')}
+        />
+        <MenuItem
+          icon="chart-timeline-variant"
+          label="Model Statistics"
+          onPress={() => navigation.navigate('ModelStats')}
+        />
+        <MenuItem
+          icon="database-export"
+          label="Export Data"
+          onPress={() => navigation.navigate('DataExport')}
+        />
+        <MenuItem
+          icon="receipt"
+          label="Payment History"
+          onPress={() => navigation.navigate('PaymentHistory')}
+        />
+        <MenuItem
+          icon="view-list"
+          label="Parlay Builder"
+          onPress={() => navigation.navigate('ParlayBuilder')}
         />
       </View>
 

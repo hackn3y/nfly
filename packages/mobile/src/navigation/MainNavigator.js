@@ -18,6 +18,15 @@ import BetDetailScreen from '../screens/main/BetDetailScreen';
 import LivePredictionsScreen from '../screens/main/LivePredictionsScreen';
 import PlayerPropsScreen from '../screens/main/PlayerPropsScreen';
 import ChangePasswordScreen from '../screens/main/ChangePasswordScreen';
+import SubscriptionScreen from '../screens/main/SubscriptionScreen';
+import PaymentHistoryScreen from '../screens/main/PaymentHistoryScreen';
+import ParlayBuilderScreen from '../screens/main/ParlayBuilderScreen';
+import HelpSupportScreen from '../screens/main/HelpSupportScreen';
+import TermsOfServiceScreen from '../screens/main/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/main/PrivacyPolicyScreen';
+import LeaderboardScreen from '../screens/main/LeaderboardScreen';
+import ModelStatsScreen from '../screens/main/ModelStatsScreen';
+import DataExportScreen from '../screens/main/DataExportScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -43,6 +52,15 @@ function ProfileStack() {
       <Stack.Screen name="BetDetail" component={BetDetailScreen} />
       <Stack.Screen name="LivePredictions" component={LivePredictionsScreen} />
       <Stack.Screen name="PlayerProps" component={PlayerPropsScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} />
+      <Stack.Screen name="ParlayBuilder" component={ParlayBuilderScreen} />
+      <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="ModelStats" component={ModelStatsScreen} />
+      <Stack.Screen name="DataExport" component={DataExportScreen} />
     </Stack.Navigator>
   );
 }

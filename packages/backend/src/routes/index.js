@@ -14,6 +14,7 @@ const adminRoutes = require('./admin.routes');
 const bankrollRoutes = require('./bankroll.routes');
 const cacheRoutes = require('./cache.routes');
 const notificationRoutes = require('./notification.routes');
+const leaderboardRoutes = require('./leaderboard.routes');
 
 // API documentation
 router.get('/', (req, res) => {
@@ -46,5 +47,6 @@ router.use('/admin', adminRoutes);
 router.use('/bankroll', bankrollRoutes);
 router.use('/cache', cacheRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/leaderboard', leaderboardRoutes);
 
 module.exports = router;
