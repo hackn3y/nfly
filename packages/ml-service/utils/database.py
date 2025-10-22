@@ -1,4 +1,5 @@
 import os
+import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -16,6 +17,9 @@ ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg:/
 engine = create_async_engine(ASYNC_DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
+
+# Synchronous engine for training
+sync_engine = create_engine(DATABASE_URL, echo=False)
 
 # Redis client
 redis_client = None
@@ -55,3 +59,7 @@ async def get_db():
 def get_redis():
     """Get Redis client"""
     return redis_client
+
+def get_postgres_connection():
+    """Get synchronous PostgreSQL connection for training"""
+    return sync_engine.connect()
