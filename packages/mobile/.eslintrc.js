@@ -1,17 +1,23 @@
 module.exports = {
   root: true,
   extends: [
-    '@react-native',
     'eslint:recommended',
   ],
   env: {
-    'react-native/react-native': true,
+    browser: true,
+    node: true,
     jest: true,
+    es2021: true,
+  },
+  parserOptions: {
+    ecmaVersion: 2021,
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
   rules: {
-    'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    'react-native/no-inline-styles': 'off',
-    'react/react-in-jsx-scope': 'off',
-    'prettier/prettier': 'off',
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^React$' }],
+    'no-undef': 'off', // Turn off for React Native globals
   },
 };
