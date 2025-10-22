@@ -18,12 +18,20 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database connections established")
 
-    # Auto-train models if they don't exist
+    # Auto-train models if they don't exist or if forced
     from pathlib import Path
     models_dir = Path("models")
     models_dir.mkdir(exist_ok=True)
 
-    if not (models_dir / "rf_model.joblib").exists():
+    force_retrain = os.getenv("FORCE_RETRAIN", "false").lower() == "true"
+
+    if force_retrain:
+        logger.info("FORCE_RETRAIN=true, deleting existing models...")
+        for model_file in models_dir.glob("*.joblib"):
+            model_file.unlink()
+            logger.info(f"Deleted {model_file.name}")
+
+    if not (models_dir / "rf_model.joblib").exists() or force_retrain:
         logger.info("=" * 60)
         logger.info("No trained models found - training models now...")
         logger.info("This is a one-time operation that takes 5-10 minutes")
