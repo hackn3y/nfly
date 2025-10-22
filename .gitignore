@@ -99,3 +99,5 @@ coverage/
 
 # Log files
 *.log
+# Security - exclude test scripts with credentials
+verify-import.js

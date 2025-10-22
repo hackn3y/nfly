@@ -1,7 +1,12 @@
 // Verify the import was successful
 const { Pool } = require('pg');
+require('dotenv').config({ path: './packages/backend/.env' });
 
-const DATABASE_URL = 'postgresql://postgres:nwXMRSbjeeTxsEjtQuAxihKGDXtlPtZA@nozomi.proxy.rlwy.net:51326/railway';
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL not found in environment variables');
+  process.exit(1);
+}
 const pool = new Pool({ connectionString: DATABASE_URL });
 
 async function verify() {

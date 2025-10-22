@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: nfl-postgres
     environment:
-      POSTGRES_USER: nfluser
-      POSTGRES_PASSWORD: nflpass123
-      POSTGRES_DB: nfl_predictor
+      POSTGRES_USER: ${POSTGRES_USER:-nfluser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-nfl_predictor}
     ports:
       - "5432:5432"
     volumes:
@@ -48,10 +48,10 @@ services:
       - "4100:4100"
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://nfluser:nflpass123@postgres:5432/nfl_predictor
-      MONGODB_URI: mongodb://nfluser:nflpass123@mongodb:27017/nfl_gematria
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nfluser}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nfl_predictor}
+      MONGODB_URI: mongodb://mongodb:27017/nfl_gematria
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
       ML_SERVICE_URL: http://ml-service:5000
     depends_on:
       - postgres
@@ -73,7 +73,7 @@ services:
       - "5000:5000"
     environment:
       FLASK_ENV: development
-      DATABASE_URL: postgresql://nfluser:nflpass123@postgres:5432/nfl_predictor
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nfluser}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nfl_predictor}
       REDIS_URL: redis://redis:6379
     depends_on:
       - postgres
