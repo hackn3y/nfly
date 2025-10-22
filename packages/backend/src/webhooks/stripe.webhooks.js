@@ -290,12 +290,13 @@ const handleStripeWebhook = async (req, res) => {
         await handlePaymentFailed(event.data.object);
         break;
 
-      case 'checkout.session.completed':
+      case 'checkout.session.completed': {
         // Handle initial checkout completion
         const session = event.data.object;
         logger.info(`Checkout completed: ${session.id}`);
         // Subscription will be handled by subscription.created event
         break;
+      }
 
       default:
         logger.info(`Unhandled event type: ${event.type}`);

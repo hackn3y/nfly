@@ -145,7 +145,7 @@ router.post('/portal', async (req, res, next) => {
  * Get current subscription details
  * GET /api/subscriptions/current
  */
-router.get('/current', async (req, res, next) => {
+router.get('/current', async (req, res, _next) => {
   try {
     const details = await subscriptionService.getSubscriptionDetails(req.user.id);
 
@@ -227,7 +227,7 @@ router.post('/change', async (req, res, next) => {
 
     const newPriceId = priceMap[newTier];
 
-    const subscription = await subscriptionService.changeSubscriptionPlan(
+    await subscriptionService.changeSubscriptionPlan(
       req.user.id,
       newPriceId
     );

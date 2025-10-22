@@ -40,8 +40,8 @@ async function backfillAndTestAccuracy(season, week) {
     // Step 2: Generate predictions for completed games
     console.log('🤖 Step 2: Generating predictions...');
 
-    let successCount = 0;
-    let errorCount = 0;
+    // let successCount = 0;
+    // let errorCount = 0;
     const predictions = [];
 
     for (const game of games) {
@@ -57,7 +57,7 @@ async function backfillAndTestAccuracy(season, week) {
         const prediction = response.data;
 
         // Store prediction in database
-        const result = await pool.query(
+        await pool.query(
           `INSERT INTO predictions (
             game_id,
             predicted_home_score,
@@ -110,14 +110,14 @@ async function backfillAndTestAccuracy(season, week) {
         });
 
         console.log(`    Predicted: ${prediction.predicted_winner} | Actual: ${actualWinner} | ${correct ? '✅ CORRECT' : '❌ WRONG'}`);
-        successCount++;
+        // successCount++;
 
         await new Promise(resolve => setTimeout(resolve, 1000));
 
       } catch (err) {
         console.log(`    ❌ Error: ${err.message}`);
         logger.error(`Error generating prediction for game ${game.id}:`, err);
-        errorCount++;
+        // errorCount++;
       }
     }
 

@@ -271,7 +271,7 @@ exports.settleBet = async (req, res, next) => {
     const pool = getPostgresPool();
     const userId = req.user.id;
     const { id } = req.params;
-    const { status, result } = req.body;
+    const { status } = req.body;
 
     if (!['won', 'lost', 'push'].includes(status)) {
       return next(new AppError('Invalid status. Must be won, lost, or push', 400));

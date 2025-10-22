@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 /**
  * Clear user's cached data
  */
-exports.clearUserCache = async (req, res, next) => {
+exports.clearUserCache = async (req, res, _next) => {
   try {
     const userId = req.user.id;
     const redis = getRedisClient();
@@ -67,7 +67,7 @@ exports.clearUserCache = async (req, res, next) => {
 /**
  * Clear all cached data (admin only)
  */
-exports.clearAllCache = async (req, res, next) => {
+exports.clearAllCache = async (req, res, _next) => {
   try {
     const redis = getRedisClient();
 

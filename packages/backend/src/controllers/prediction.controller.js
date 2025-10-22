@@ -295,7 +295,7 @@ exports.getLivePredictions = async (req, res, next) => {
 /**
  * Get player prop predictions
  */
-exports.getPlayerProps = async (req, res, next) => {
+exports.getPlayerProps = async (req, res, _next) => {
   try {
     const { gameId } = req.params;
     const pool = getPostgresPool();

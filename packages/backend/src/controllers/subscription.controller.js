@@ -110,7 +110,7 @@ exports.handleWebhook = async (req, res, next) => {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed':
+      case 'checkout.session.completed': {
         const session = event.data.object;
         const { userId, tier } = session.metadata;
 
@@ -127,8 +127,9 @@ exports.handleWebhook = async (req, res, next) => {
 
         logger.info(`User ${userId} subscribed to ${tier}`);
         break;
+      }
 
-      case 'customer.subscription.deleted':
+      case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         await pool.query(
           `UPDATE users
@@ -139,8 +140,9 @@ exports.handleWebhook = async (req, res, next) => {
           [subscription.customer]
         );
         break;
+      }
 
-      case 'invoice.payment_failed':
+      case 'invoice.payment_failed': {
         const invoice = event.data.object;
         await pool.query(
           `UPDATE users
@@ -150,6 +152,7 @@ exports.handleWebhook = async (req, res, next) => {
           [invoice.customer]
         );
         break;
+      }
 
       default:
         logger.info(`Unhandled event type: ${event.type}`);

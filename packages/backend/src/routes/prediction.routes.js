@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const predictionController = require('../controllers/prediction.controller');
-const { protect, requireSubscription } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const {
   checkPredictionLimit,
   requireFeature,

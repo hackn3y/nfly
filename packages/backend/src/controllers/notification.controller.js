@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
 /**
  * Get user's notification preferences
  */
-exports.getPreferences = async (req, res, next) => {
+exports.getPreferences = async (req, res, _next) => {
   try {
     const userId = req.user.id;
     const pool = getPostgresPool();
@@ -67,7 +67,7 @@ exports.getPreferences = async (req, res, next) => {
 /**
  * Update notification preferences
  */
-exports.updatePreferences = async (req, res, next) => {
+exports.updatePreferences = async (req, res, _next) => {
   try {
     const userId = req.user.id;
     const pool = getPostgresPool();

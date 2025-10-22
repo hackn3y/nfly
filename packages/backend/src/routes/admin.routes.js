@@ -35,13 +35,14 @@ router.post('/jobs/:jobName/run', async (req, res, next) => {
         result = await nflDataService.syncCurrentWeek();
         break;
 
-      case 'fetch-historical':
+      case 'fetch-historical': {
         const { startSeason, endSeason } = req.body;
         result = await nflDataService.fetchHistoricalData(
           startSeason || 2020,
           endSeason || new Date().getFullYear()
         );
         break;
+      }
 
       case 'weekly-summary':
         result = await scheduler.runJob('weekly-summary');
@@ -98,11 +99,10 @@ router.get('/stats', async (req, res, next) => {
     const pool = getPostgresPool();
 
     // Get various counts
-    const [users, games, predictions, payments] = await Promise.all([
+    const [users, games, predictions] = await Promise.all([
       pool.query('SELECT COUNT(*) as count FROM users'),
       pool.query('SELECT COUNT(*) as count FROM games'),
-      pool.query('SELECT COUNT(*) as count FROM predictions'),
-      pool.query('SELECT COUNT(*) as count FROM payments WHERE status = \'succeeded\'')
+      pool.query('SELECT COUNT(*) as count FROM predictions')
     ]);
 
     // Get subscription breakdown
@@ -236,7 +236,7 @@ router.get('/users', async (req, res, next) => {
  * GET /api/admin/logs
  */
 router.get('/logs', async (req, res) => {
-  const limit = parseInt(req.query.limit) || 50;
+  // const limit = parseInt(req.query.limit) || 50;
 
   // This would read from log files or a logging service
   // For now, return a placeholder

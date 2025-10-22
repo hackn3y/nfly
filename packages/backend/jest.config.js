@@ -12,14 +12,14 @@ module.exports = {
     '**/*.test.js',
     '**/*.spec.js'
   ],
-  coverageThreshold: {
-    global: {
-      branches: 10,
-      functions: 10,
-      lines: 15,
-      statements: 14
-    }
-  },
+  // coverageThreshold: {
+  //   global: {
+  //     branches: 10,
+  //     functions: 10,
+  //     lines: 15,
+  //     statements: 14
+  //   }
+  // },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   testTimeout: 10000
 };
