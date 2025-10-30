@@ -3,7 +3,6 @@
     "name": "NFL Predictor",
     "slug": "nfl-predictor",
     "version": "1.0.0",
-    "main": "index.js",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -32,13 +31,16 @@
       "package": "com.nflpredictor.app",
       "permissions": [
         "INTERNET"
-      ]
+      ],
+      "newArchEnabled": false,
+      "jsEngine": "hermes",
+      "enableBridgelessMode": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiUrl": "https://nfl-predictorbackend-production.up.railway.app/api",
+      "apiUrl": "http://localhost:3100/api",
       "eas": {
         "projectId": "your-project-id"
       }

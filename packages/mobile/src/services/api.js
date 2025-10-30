@@ -6,7 +6,16 @@ const resolveApiUrl = () => {
   const expoConfig = Constants.expoConfig ?? {};
   const manifest = Constants.manifest2;
 
-  // Allow explicit configuration to win first
+  // Check if we're in a web production environment (Netlify)
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    // If deployed (not localhost), use production API
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return 'https://nfl-predictorbackend-production.up.railway.app/api';
+    }
+  }
+
+  // For local development, allow explicit configuration
   let url = expoConfig.extra?.apiUrl;
 
   const looksLocal = (candidate) =>
@@ -23,15 +32,16 @@ const resolveApiUrl = () => {
       const withoutProtocol = developerOrigin.replace(/^(exp|http|https|ws|wss):\/\//, '');
       const host = withoutProtocol.split(':')[0];
       if (host) {
-        url = `http://${host}:4100/api`;
+        url = `http://${host}:3100/api`;
       }
     }
   }
 
-  return url || 'http://localhost:4100/api';
+  return url || 'http://localhost:3100/api';
 };
 
 const API_URL = resolveApiUrl();
+console.log('[API] Using API URL:', API_URL);
 const TOKEN_KEY = 'auth_token';
 
 const api = axios.create({
