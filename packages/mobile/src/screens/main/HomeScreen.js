@@ -1,13 +1,17 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { fetchUpcomingPredictions } from '../../store/slices/predictionsSlice';
 import { fetchTransparencyStats } from '../../store/slices/transparencySlice';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { PredictionCardSkeleton, StatsCardSkeleton } from '../../components/LoadingSkeleton';
+import { ErrorState, EmptyState } from '../../components/ErrorState';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
+  const { colors } = useTheme();
   const { upcoming, loading, error } = useSelector((state) => state.predictions);
   const { stats } = useSelector((state) => state.transparency);
   const { user, isAuthenticated, token } = useSelector((state) => state.auth);
@@ -24,6 +28,8 @@ export default function HomeScreen({ navigation }) {
     dispatch(fetchUpcomingPredictions());
     dispatch(fetchTransparencyStats());
   };
+
+  const styles = createStyles(colors);
 
   return (
     <ScrollView
@@ -51,16 +57,22 @@ export default function HomeScreen({ navigation }) {
           icon="chart-line"
           label="Accuracy"
           value={stats?.overall?.accuracy ? `${stats.overall.accuracy}%` : '---'}
+          colors={colors}
+          styles={styles}
         />
         <StatCard
           icon="football"
           label="Games"
           value={stats?.overall?.total_predictions || '---'}
+          colors={colors}
+          styles={styles}
         />
         <StatCard
           icon="trophy"
           label="Wins"
           value={stats?.overall?.correct || '---'}
+          colors={colors}
+          styles={styles}
         />
       </View>
 
@@ -73,12 +85,37 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {upcoming && upcoming.length > 0 ? (
+        {!isAuthenticated || !token ? (
+          <EmptyState
+            title="Sign In Required"
+            message="Please log in to view NFL game predictions and analysis"
+            icon="login"
+            actionLabel="Go to Login"
+            onAction={() => navigation.navigate('Auth')}
+          />
+        ) : error ? (
+          <ErrorState
+            message={error.includes('authorized') || error.includes('401')
+              ? 'Please try logging out and logging back in'
+              : 'Our prediction service is currently offline. Check back soon!'}
+            onRetry={() => dispatch(fetchUpcomingPredictions())}
+          />
+        ) : loading && (!upcoming || upcoming.length === 0) ? (
+          <>
+            <PredictionCardSkeleton />
+            <PredictionCardSkeleton />
+            <PredictionCardSkeleton />
+          </>
+        ) : upcoming && upcoming.length > 0 ? (
           upcoming.slice(0, 3).map((prediction, index) => (
-            <PredictionCard key={prediction.game_id || index} prediction={prediction} />
+            <PredictionCard key={prediction.game_id || index} prediction={prediction} colors={colors} styles={styles} />
           ))
         ) : (
-          <Text style={styles.noData}>No upcoming games</Text>
+          <EmptyState
+            title="No Upcoming Games"
+            message="There are no scheduled games at the moment. Check back later!"
+            icon="football-off"
+          />
         )}
       </View>
 
@@ -91,6 +128,8 @@ export default function HomeScreen({ navigation }) {
             title="Gematria"
             subtitle="Calculate values"
             onPress={() => navigation.navigate('Gematria')}
+            colors={colors}
+            styles={styles}
           />
           <ActionCard
             icon="crown"
@@ -98,6 +137,8 @@ export default function HomeScreen({ navigation }) {
             subtitle="Get Premium"
             highlight
             onPress={() => navigation.navigate('Profile')}
+            colors={colors}
+            styles={styles}
           />
         </View>
       </View>
@@ -105,7 +146,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-function StatCard({ icon, label, value }) {
+function StatCard({ icon, label, value, colors, styles }) {
   return (
     <View style={styles.statCard}>
       <Icon name={icon} size={24} color={colors.primary} />
@@ -115,13 +156,12 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-function PredictionCard({ prediction }) {
+function PredictionCard({ prediction, colors, styles }) {
   if (!prediction) {
-    console.log('[PredictionCard] No prediction data');
     return null;
   }
 
-  const confidence = prediction.confidence || 0.5;
+  const confidence = parseFloat(prediction.confidence) || 0.5;
   const confidenceColor = confidence > 0.7 ? colors.success :
                          confidence > 0.55 ? colors.warning : colors.placeholder;
 
@@ -137,11 +177,35 @@ function PredictionCard({ prediction }) {
     <View style={styles.predictionCard}>
       <View style={styles.matchup}>
         <View style={styles.teamContainer}>
+          {prediction.home_team_logo ? (
+            <View style={styles.logoContainer}>
+              <Image
+                source={{ uri: prediction.home_team_logo }}
+                style={styles.teamLogoImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : (
+            <Icon name="football" size={32} color={colors.textSecondary} style={styles.teamLogoPlaceholder} />
+          )}
           <Text style={styles.teamName}>{prediction.home_team || 'Home'}</Text>
+          <Text style={styles.teamScore}>{prediction.predicted_score?.home || '-'}</Text>
         </View>
         <Text style={styles.vs}>VS</Text>
         <View style={styles.teamContainer}>
+          {prediction.away_team_logo ? (
+            <View style={styles.logoContainer}>
+              <Image
+                source={{ uri: prediction.away_team_logo }}
+                style={styles.teamLogoImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : (
+            <Icon name="football" size={32} color={colors.textSecondary} style={styles.teamLogoPlaceholder} />
+          )}
           <Text style={styles.teamName}>{prediction.away_team || 'Away'}</Text>
+          <Text style={styles.teamScore}>{prediction.predicted_score?.away || '-'}</Text>
         </View>
       </View>
 
@@ -156,12 +220,20 @@ function PredictionCard({ prediction }) {
             {(confidence * 100).toFixed(0)}%
           </Text>
         </View>
+        {prediction.spread_prediction != null && (
+          <View style={styles.predictionRow}>
+            <Text style={styles.label}>Spread:</Text>
+            <Text style={styles.value}>
+              {prediction.spread_prediction >= 0 ? '+' : ''}{prediction.spread_prediction}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
-function ActionCard({ icon, title, subtitle, highlight, onPress }) {
+function ActionCard({ icon, title, subtitle, highlight, onPress, colors, styles }) {
   return (
     <TouchableOpacity
       style={[styles.actionCard, highlight && styles.actionCardHighlight]}
@@ -182,7 +254,7 @@ function ActionCard({ icon, title, subtitle, highlight, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -199,6 +271,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     ...typography.h2,
+    color: colors.text,
   },
   subscriptionBadge: {
     backgroundColor: colors.primary,
@@ -226,10 +299,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.h2,
+    color: colors.text,
     marginTop: spacing.sm,
   },
   statLabel: {
     ...typography.caption,
+    color: colors.placeholder,
   },
   section: {
     paddingHorizontal: spacing.lg,
@@ -243,6 +318,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
+    color: colors.text,
   },
   seeAll: {
     color: colors.primary,
@@ -266,11 +342,35 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  logoContainer: {
+    width: 50,
+    height: 50,
+    marginBottom: spacing.xs,
+    backgroundColor: '#ffffff',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  teamLogoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  teamLogoPlaceholder: {
+    marginBottom: spacing.xs,
+  },
   teamName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
+  },
+  teamScore: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   vs: {
     color: '#a0a0a0',
@@ -316,6 +416,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     ...typography.h3,
+    color: colors.text,
     marginTop: spacing.sm,
   },
   actionTitleHighlight: {
@@ -323,15 +424,53 @@ const styles = StyleSheet.create({
   },
   actionSubtitle: {
     ...typography.caption,
+    color: colors.placeholder,
   },
   actionSubtitleHighlight: {
     color: colors.background,
     opacity: 0.8,
   },
+  errorContainer: {
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  errorText: {
+    ...typography.h3,
+    color: colors.warning,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  errorSubtext: {
+    ...typography.body,
+    color: colors.placeholder,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    marginTop: spacing.md,
+  },
+  retryButtonText: {
+    color: colors.background,
+    fontWeight: 'bold',
+  },
+  noDataContainer: {
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
   noData: {
     ...typography.body,
     color: colors.placeholder,
     textAlign: 'center',
-    padding: spacing.xl,
+    marginTop: spacing.md,
   },
 });
