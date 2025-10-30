@@ -53,7 +53,6 @@ exports.getUpcomingPredictions = async (req, res, next) => {
           p.spread_prediction, p.over_under_prediction,
           g.home_team, g.away_team, g.game_date, g.week, g.season,
           g.home_score, g.away_score,
-          g.home_team_logo, g.away_team_logo,
           g.home_abbreviation, g.away_abbreviation
         FROM predictions p
         JOIN games g ON p.game_id = g.id
@@ -72,7 +71,6 @@ exports.getUpcomingPredictions = async (req, res, next) => {
             p.spread_prediction, p.over_under_prediction,
             g.home_team, g.away_team, g.game_date, g.week, g.season,
             g.home_score, g.away_score,
-            g.home_team_logo, g.away_team_logo,
             g.home_abbreviation, g.away_abbreviation
           FROM predictions p
           JOIN games g ON p.game_id = g.id
@@ -82,8 +80,15 @@ exports.getUpcomingPredictions = async (req, res, next) => {
         );
       }
 
+      // Generate logo URLs from abbreviations
       predictions = result.rows.length > 0 ? result.rows.map(p => ({
         ...p,
+        home_team_logo: p.home_abbreviation
+          ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${p.home_abbreviation.toLowerCase()}.png`
+          : null,
+        away_team_logo: p.away_abbreviation
+          ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${p.away_abbreviation.toLowerCase()}.png`
+          : null,
         predicted_score: {
           home: p.predicted_home_score,
           away: p.predicted_away_score
@@ -225,7 +230,6 @@ exports.getWeeklyPredictions = async (req, res, next) => {
           p.spread_prediction, p.over_under_prediction,
           g.home_team, g.away_team, g.game_date, g.week, g.season,
           g.home_score, g.away_score,
-          g.home_team_logo, g.away_team_logo,
           g.home_abbreviation, g.away_abbreviation
         FROM predictions p
         JOIN games g ON p.game_id = g.id
@@ -234,9 +238,16 @@ exports.getWeeklyPredictions = async (req, res, next) => {
         [week, season]
       );
       logger.info(`Query result: ${result.rows.length} rows`);
-      
+
+      // Generate logo URLs from abbreviations
       predictions = result.rows.map(p => ({
         ...p,
+        home_team_logo: p.home_abbreviation
+          ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${p.home_abbreviation.toLowerCase()}.png`
+          : null,
+        away_team_logo: p.away_abbreviation
+          ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${p.away_abbreviation.toLowerCase()}.png`
+          : null,
         // Transform predicted scores into the format UI expects
         predicted_score: {
           home: p.predicted_home_score,
