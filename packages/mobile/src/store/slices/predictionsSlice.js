@@ -6,8 +6,14 @@ export const fetchUpcomingPredictions = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/predictions/upcoming');
+      console.log('[predictionsSlice] Upcoming predictions response:', response.data);
       return response.data.data;
     } catch (error) {
+      console.error('[predictionsSlice] Failed to fetch upcoming predictions:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch predictions');
     }
   }

@@ -209,7 +209,7 @@ if (typeof window !== 'undefined') {
   // Mock PlatformConstants - CRITICAL for version check
   const mockPlatformConstants = {
     isTesting: false,
-    reactNativeVersion: { major: 0, minor: 73, patch: 6 },
+    reactNativeVersion: { major: 0, minor: 81, patch: 5 },
     Version: 33,
     Model: 'web',
   };
@@ -248,8 +248,51 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Inject CSS for web-specific styling - OVERRIDE INLINE STYLES
+if (typeof document !== 'undefined') {
+  // Create style element that we can update
+  const style = document.createElement('style');
+  style.id = 'tab-bar-theme-styles';
+  document.head.appendChild(style);
+
+  // Function to update the stylesheet
+  const updateStylesheet = (isDark) => {
+    style.textContent = `
+      /* Tab bar - dynamically updated based on theme */
+      .r-backgroundColor-1gzzd1q.r-flexDirection-18u37iz.r-paddingBlock-11f147o,
+      .r-backgroundColor-1gzzd1q {
+        background-color: ${isDark ? '#1e293b' : '#ffffff'} !important;
+        border-top-width: 2px !important;
+        border-top-color: ${isDark ? '#334155' : '#e2e8f0'} !important;
+        box-shadow: 0 -1px 3px rgba(0, 0, 0, ${isDark ? '0.3' : '0.1'}) !important;
+      }
+    `;
+  };
+
+  // Check localStorage for initial theme on load
+  const loadInitialTheme = () => {
+    try {
+      // Use localStorage on web instead of AsyncStorage
+      const savedTheme = localStorage.getItem('theme');
+      const isDark = savedTheme === 'dark';
+      updateStylesheet(isDark);
+    } catch (error) {
+      // Default to light mode
+      updateStylesheet(false);
+    }
+  };
+
+  // Listen for theme change events from ThemeContext
+  window.addEventListener('themeChanged', (event) => {
+    const isDark = event.detail.isDark;
+    updateStylesheet(isDark);
+  });
+
+  // Load initial theme
+  loadInitialTheme();
+}
+
 // Now load the main app
-import 'expo/build/Expo.fx';
 import { registerRootComponent } from 'expo';
 import { activateKeepAwakeAsync } from 'expo-keep-awake';
 
