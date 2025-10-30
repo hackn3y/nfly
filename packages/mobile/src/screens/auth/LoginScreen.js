@@ -3,36 +3,18 @@ import { View, Text, StyleSheet, TouchableOpacity, Pressable, KeyboardAvoidingVi
 import { TextInput } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../../store/slices/authSlice';
-import { colors, spacing, typography } from '../../theme';
-
-// Simple TextInput for web without animations
-const SimpleTextInput = ({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
-  if (Platform.OS !== 'web') {
-    return null; // This component is only for web
-  }
-  
-  return (
-    <View style={[styles.simpleInputContainer, style]}>
-      <Text style={styles.simpleInputLabel}>{label}</Text>
-      <RNTextInput
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        style={styles.simpleInput}
-        placeholderTextColor={colors.placeholder}
-      />
-    </View>
-  );
-};
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const styles = getStyles(colors);
 
   React.useEffect(() => {
     if (error) {
@@ -42,19 +24,50 @@ export default function LoginScreen({ navigation }) {
   }, [error]);
 
   const handleLogin = () => {
-    console.log('[LoginScreen] handleLogin called');
-    console.log('[LoginScreen] email:', email);
-    console.log('[LoginScreen] password:', password ? '***' : '(empty)');
-    
     if (!email || !password) {
-      console.log('[LoginScreen] Missing email or password');
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    console.log('[LoginScreen] Dispatching login action');
     dispatch(login({ email, password }));
   };
+
+  // Simple TextInput for web without animations
+  const SimpleTextInput = React.useCallback(({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
+    if (Platform.OS !== 'web') {
+      return null;
+    }
+
+    return (
+      <View style={{ marginBottom: spacing.md, backgroundColor: 'transparent' }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 4, marginLeft: 4 }}>{label}</Text>
+        <View style={{ backgroundColor: colors.surface, borderRadius: 8, overflow: 'hidden' }}>
+          <RNTextInput
+            value={value}
+            onChangeText={onChangeText}
+            secureTextEntry={secureTextEntry}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            placeholder={label}
+            style={{
+              backgroundColor: colors.surface,
+              borderWidth: 2,
+              borderColor: colors.border,
+              borderRadius: 8,
+              paddingHorizontal: 14,
+              paddingVertical: 14,
+              fontSize: 16,
+              color: colors.text,
+              outlineStyle: 'none',
+              minHeight: 48,
+              margin: 0,
+            }}
+            placeholderTextColor={colors.placeholder}
+          />
+        </View>
+      </View>
+    );
+  }, [colors]);
 
   return (
     <KeyboardAvoidingView
@@ -85,7 +98,7 @@ export default function LoginScreen({ navigation }) {
                   secureTextEntry={!showPassword}
                   style={styles.input}
                 />
-                <Pressable 
+                <Pressable
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
                 >
@@ -104,12 +117,12 @@ export default function LoginScreen({ navigation }) {
                 autoCapitalize="none"
                 style={styles.input}
                 textColor={colors.text}
-                theme={{ 
-                  colors: { 
+                theme={{
+                  colors: {
                     primary: colors.primary,
                     onSurfaceVariant: colors.placeholder,
                     outline: colors.border,
-                  } 
+                  }
                 }}
               />
 
@@ -127,12 +140,12 @@ export default function LoginScreen({ navigation }) {
                 }
                 style={styles.input}
                 textColor={colors.text}
-                theme={{ 
-                  colors: { 
+                theme={{
+                  colors: {
                     primary: colors.primary,
                     onSurfaceVariant: colors.placeholder,
                     outline: colors.border,
-                  } 
+                  }
                 }}
               />
             </>
@@ -167,7 +180,7 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -179,6 +192,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   subtitle: {
@@ -198,13 +212,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: spacing.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonPressed: {
-    opacity: 0.8,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   loginButtonText: {
     ...typography.h3,
-    color: colors.background,
+    color: colors.onPrimary,
+    fontWeight: 'bold',
   },
   forgotPassword: {
     alignItems: 'center',
@@ -227,21 +248,27 @@ const styles = StyleSheet.create({
   // Simple input styles for web (no animations)
   simpleInputContainer: {
     marginBottom: spacing.md,
+    backgroundColor: 'transparent',
   },
   simpleInputLabel: {
-    fontSize: 12,
-    color: colors.placeholder,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: 4,
     marginLeft: 4,
   },
   simpleInput: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
-    borderRadius: 4,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     fontSize: 16,
     color: colors.text,
+    outlineStyle: 'none',
+    minHeight: 48,
+    margin: 0,
   },
   passwordContainer: {
     position: 'relative',

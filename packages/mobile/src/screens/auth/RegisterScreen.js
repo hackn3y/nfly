@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platfor
 import { TextInput } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../../store/slices/authSlice';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 
 // Conditionally import native-only components
 let DateTimePicker = null;
@@ -14,47 +15,10 @@ if (Platform.OS !== 'web') {
   Checkbox = require('react-native-paper').Checkbox;
 }
 
-// Simple TextInput for web without animations
-const SimpleTextInput = ({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-
-  return (
-    <View style={[styles.simpleInputContainer, style]}>
-      <Text style={styles.simpleInputLabel}>{label}</Text>
-      <RNTextInput
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        style={styles.simpleInput}
-        placeholderTextColor={colors.placeholder}
-      />
-    </View>
-  );
-};
-
-// Simple Checkbox for web
-const SimpleCheckbox = ({ checked, onPress, label }) => {
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-
-  return (
-    <TouchableOpacity style={styles.webCheckboxContainer} onPress={onPress}>
-      <View style={[styles.webCheckbox, checked && styles.webCheckboxChecked]}>
-        {checked && <Text style={styles.webCheckboxCheck}>✓</Text>}
-      </View>
-      <Text style={styles.checkboxText}>{label}</Text>
-    </TouchableOpacity>
-  );
-};
-
 export default function RegisterScreen({ navigation }) {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
+  const { colors } = useTheme();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -69,12 +33,67 @@ export default function RegisterScreen({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  const styles = getStyles(colors);
+
   React.useEffect(() => {
     if (error) {
       Alert.alert('Registration Failed', error);
       dispatch(clearError());
     }
   }, [error]);
+
+  // Simple TextInput for web without animations
+  const SimpleTextInput = React.useCallback(({ label, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, style }) => {
+    if (Platform.OS !== 'web') {
+      return null;
+    }
+
+    return (
+      <View style={{ marginBottom: spacing.md, backgroundColor: 'transparent' }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 4, marginLeft: 4 }}>{label}</Text>
+        <View style={{ backgroundColor: colors.surface, borderRadius: 8, overflow: 'hidden' }}>
+          <RNTextInput
+            value={value}
+            onChangeText={onChangeText}
+            secureTextEntry={secureTextEntry}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            placeholder={label}
+            style={{
+              backgroundColor: colors.surface,
+              borderWidth: 2,
+              borderColor: colors.border,
+              borderRadius: 8,
+              paddingHorizontal: 14,
+              paddingVertical: 14,
+              fontSize: 16,
+              color: colors.text,
+              outlineStyle: 'none',
+              minHeight: 48,
+              margin: 0,
+            }}
+            placeholderTextColor={colors.placeholder}
+          />
+        </View>
+      </View>
+    );
+  }, [colors]);
+
+  // Simple Checkbox for web
+  const SimpleCheckbox = ({ checked, onPress, label }) => {
+    if (Platform.OS !== 'web') {
+      return null;
+    }
+
+    return (
+      <TouchableOpacity style={styles.webCheckboxContainer} onPress={onPress}>
+        <View style={[styles.webCheckbox, checked && styles.webCheckboxChecked]}>
+          {checked && <Text style={styles.webCheckboxCheck}>✓</Text>}
+        </View>
+        <Text style={styles.checkboxText}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const handleRegister = () => {
     // Validation
@@ -161,7 +180,14 @@ export default function RegisterScreen({ navigation }) {
                         setFormData({ ...formData, dateOfBirth: date });
                       }
                     }}
-                    style={styles.simpleInput}
+                    style={[
+                      styles.simpleInput,
+                      {
+                        backgroundColor: colors.surface,
+                        color: colors.text,
+                        borderColor: colors.border,
+                      }
+                    ]}
                   />
                 </View>
 
@@ -189,7 +215,14 @@ export default function RegisterScreen({ navigation }) {
                   onChangeText={(text) => setFormData({ ...formData, firstName: text })}
                   mode="outlined"
                   style={styles.input}
-                  theme={{ colors: { primary: colors.primary } }}
+                  textColor={colors.text}
+                  theme={{
+                    colors: {
+                      primary: colors.primary,
+                      onSurfaceVariant: colors.placeholder,
+                      outline: colors.border,
+                    }
+                  }}
                 />
 
                 <TextInput
@@ -198,7 +231,14 @@ export default function RegisterScreen({ navigation }) {
                   onChangeText={(text) => setFormData({ ...formData, lastName: text })}
                   mode="outlined"
                   style={styles.input}
-                  theme={{ colors: { primary: colors.primary } }}
+                  textColor={colors.text}
+                  theme={{
+                    colors: {
+                      primary: colors.primary,
+                      onSurfaceVariant: colors.placeholder,
+                      outline: colors.border,
+                    }
+                  }}
                 />
 
                 <TextInput
@@ -209,7 +249,14 @@ export default function RegisterScreen({ navigation }) {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   style={styles.input}
-                  theme={{ colors: { primary: colors.primary } }}
+                  textColor={colors.text}
+                  theme={{
+                    colors: {
+                      primary: colors.primary,
+                      onSurfaceVariant: colors.placeholder,
+                      outline: colors.border,
+                    }
+                  }}
                 />
 
                 <TouchableOpacity
@@ -235,7 +282,14 @@ export default function RegisterScreen({ navigation }) {
                     />
                   }
                   style={styles.input}
-                  theme={{ colors: { primary: colors.primary } }}
+                  textColor={colors.text}
+                  theme={{
+                    colors: {
+                      primary: colors.primary,
+                      onSurfaceVariant: colors.placeholder,
+                      outline: colors.border,
+                    }
+                  }}
                 />
 
                 <TextInput
@@ -245,7 +299,14 @@ export default function RegisterScreen({ navigation }) {
                   mode="outlined"
                   secureTextEntry={!showPassword}
                   style={styles.input}
-                  theme={{ colors: { primary: colors.primary } }}
+                  textColor={colors.text}
+                  theme={{
+                    colors: {
+                      primary: colors.primary,
+                      onSurfaceVariant: colors.placeholder,
+                      outline: colors.border,
+                    }
+                  }}
                 />
               </>
             )}
@@ -272,7 +333,7 @@ export default function RegisterScreen({ navigation }) {
                 label="I agree to the Terms & Conditions and confirm I am 21+"
               />
             ) : (
-              <View style={styles.checkboxContainer}>
+              Checkbox && <View style={styles.checkboxContainer}>
                 <Checkbox
                   status={agreedToTerms ? 'checked' : 'unchecked'}
                   onPress={() => setAgreedToTerms(!agreedToTerms)}
@@ -307,7 +368,7 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -322,6 +383,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   subtitle: {
@@ -367,10 +429,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: spacing.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   registerButtonText: {
     ...typography.h3,
-    color: colors.background,
+    color: colors.onPrimary,
+    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
@@ -387,21 +455,27 @@ const styles = StyleSheet.create({
   // Simple input styles for web (no animations)
   simpleInputContainer: {
     marginBottom: spacing.md,
+    backgroundColor: 'transparent',
   },
   simpleInputLabel: {
-    fontSize: 12,
-    color: colors.placeholder,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: 4,
     marginLeft: 4,
   },
   simpleInput: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
-    borderRadius: 4,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     fontSize: 16,
     color: colors.text,
+    outlineStyle: 'none',
+    minHeight: 48,
+    margin: 0,
   },
   // Web checkbox styles
   webCheckboxContainer: {
@@ -423,7 +497,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   webCheckboxCheck: {
-    color: colors.background,
+    color: colors.onPrimary,
     fontSize: 14,
     fontWeight: 'bold',
   },

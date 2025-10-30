@@ -44,7 +44,7 @@ if (!allowedOrigins.includes('https://nfly.netlify.app')) {
 
 // Allow localhost for development
 if (process.env.NODE_ENV !== 'production') {
-  const devOrigins = ['http://localhost:8100', 'http://localhost:3000', 'http://localhost:19006'];
+  const devOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:3000', 'http://localhost:19006'];
   devOrigins.forEach(origin => {
     if (!allowedOrigins.includes(origin)) {
       allowedOrigins.push(origin);
@@ -64,7 +64,7 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // Increased for development
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
@@ -126,7 +126,13 @@ async function startServer() {
     // Connect to databases
     await connectPostgres();
     await connectMongoDB();
-    await connectRedis();
+    
+    // Only connect to Redis in production or if REDIS_URL is set
+    if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+      await connectRedis();
+    } else {
+      logger.info('⚠️  Redis disabled in development (caching disabled)');
+    }
 
     // Start server
     const server = app.listen(PORT, () => {

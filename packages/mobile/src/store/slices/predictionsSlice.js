@@ -21,7 +21,17 @@ export const fetchWeeklyPredictions = createAsyncThunk(
         params: { week, season }
       });
       // Handle both formats: response.data.data or response.data directly
-      return response.data.data || response.data;
+      const predictions = response.data.data || response.data;
+
+      // Debug: Check ALL predictions
+      if (predictions && predictions.length > 0) {
+        console.log(`✅ Fetched ${predictions.length} predictions for Week ${week}`);
+        predictions.forEach((p, idx) => {
+          console.log(`  ${idx + 1}. Game ${p.game_id}: ${p.away_team} @ ${p.home_team}, Winner: ${p.predicted_winner}`);
+        });
+      }
+
+      return predictions;
     } catch (error) {
       console.error(`[predictionsSlice] Failed to fetch Week ${week} Season ${season}:`, error.response?.data);
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch weekly predictions');

@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { fetchUpcomingPredictions, fetchWeeklyPredictions, setCurrentWeek } from '../../store/slices/predictionsSlice';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { PredictionCardSkeleton } from '../../components/LoadingSkeleton';
+import { EmptyState } from '../../components/ErrorState';
 
 export default function PredictionsScreen() {
   const dispatch = useDispatch();
+  const { colors } = useTheme();
   const { upcoming, weekly, loading, currentWeek, currentSeason } = useSelector((state) => state.predictions);
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' or 'weekly'
+  const [viewMode, setViewMode] = useState('weekly'); // Start in weekly mode for Week 8
 
   // Get current NFL season and week based on actual data
   const getCurrentNFLWeek = () => {
@@ -28,9 +32,11 @@ export default function PredictionsScreen() {
   };
 
   useEffect(() => {
-    const { season, week } = getCurrentNFLWeek();
-    dispatch(setCurrentWeek({ season, week }));
-    dispatch(fetchUpcomingPredictions());
+    // Hardcode to Week 8 for now since that's the only week with data
+    dispatch(setCurrentWeek({ season: 2025, week: 8 }));
+    // Load Week 8 predictions directly
+    dispatch(fetchWeeklyPredictions({ week: 8, season: 2025 }));
+    setViewMode('weekly');
   }, []);
 
   const handleRefresh = () => {
@@ -42,42 +48,13 @@ export default function PredictionsScreen() {
   };
 
   const handleWeekChange = async (direction) => {
-    let newWeek = currentWeek + direction;
-    const maxAttempts = 5; // Maximum weeks to check before giving up
-    let attempts = 0;
+    const newWeek = currentWeek + direction;
 
-    // Keep navigating until we find a week with games or hit boundaries
-    while (newWeek >= 1 && newWeek <= 18 && attempts < maxAttempts) {
-      attempts++;
-
-      try {
-        console.log('[PredictionsScreen] Checking Week', newWeek);
-
-        // Fetch the week's predictions to check if it has games
-        const result = await dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason })).unwrap();
-
-        // If this week has games, use it
-        if (result && result.length > 0) {
-          dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
-          setViewMode('weekly');
-          break;
-        } else {
-          // No games this week, try the next week in the same direction
-          console.log(`[PredictionsScreen] Week ${newWeek} has no games, trying next week`);
-          newWeek += direction;
-        }
-      } catch (error) {
-        console.error(`[PredictionsScreen] Error fetching Week ${newWeek}:`, error);
-        // If there's an error, just set the week anyway
-        dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
-        setViewMode('weekly');
-        break;
-      }
-    }
-
-    // If we've exhausted all attempts, stay on current week
-    if (attempts >= maxAttempts) {
-      console.log('[PredictionsScreen] No weeks with games found in search range');
+    // Allow navigation through all weeks
+    if (newWeek >= 1 && newWeek <= 18) {
+      dispatch(setCurrentWeek({ season: currentSeason, week: newWeek }));
+      dispatch(fetchWeeklyPredictions({ week: newWeek, season: currentSeason }));
+      setViewMode('weekly');
     }
   };
 
@@ -98,17 +75,20 @@ export default function PredictionsScreen() {
 
     switch (selectedFilter) {
       case 'high':
-        return predictions.filter(p => (p.confidence || 0) >= 0.7);
+        return predictions.filter(p => {
+          const confidence = parseFloat(p.confidence) || 0;
+          return confidence >= 0.7;
+        });
       case 'underdogs':
         return predictions.filter(p => {
           // Underdog is the team with lower win probability
-          const homeWinProb = p.home_win_probability || 0.5;
+          const homeWinProb = parseFloat(p.home_win_probability) || 0.5;
           return homeWinProb < 0.5;
         });
       case 'favorites':
         return predictions.filter(p => {
           // Favorite is the team with higher win probability
-          const homeWinProb = p.home_win_probability || 0.5;
+          const homeWinProb = parseFloat(p.home_win_probability) || 0.5;
           return homeWinProb > 0.5;
         });
       case 'all':
@@ -118,6 +98,8 @@ export default function PredictionsScreen() {
   };
 
   const displayPredictions = getFilteredPredictions();
+
+  const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -153,21 +135,25 @@ export default function PredictionsScreen() {
             label="All Games"
             active={selectedFilter === 'all'}
             onPress={() => setSelectedFilter('all')}
+            styles={styles}
           />
           <FilterChip
             label="High Confidence"
             active={selectedFilter === 'high'}
             onPress={() => setSelectedFilter('high')}
+            styles={styles}
           />
           <FilterChip
             label="Underdogs"
             active={selectedFilter === 'underdogs'}
             onPress={() => setSelectedFilter('underdogs')}
+            styles={styles}
           />
           <FilterChip
             label="Favorites"
             active={selectedFilter === 'favorites'}
             onPress={() => setSelectedFilter('favorites')}
+            styles={styles}
           />
         </ScrollView>
       </View>
@@ -176,32 +162,45 @@ export default function PredictionsScreen() {
       <ScrollView
         style={styles.scrollView}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={handleRefresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={loading && displayPredictions.length > 0} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
-        {displayPredictions && displayPredictions.length > 0 ? (
-          displayPredictions.map((prediction, index) => (
-            <DetailedPredictionCard key={prediction.game_id || index} prediction={prediction} />
-          ))
+        {loading && displayPredictions.length === 0 ? (
+          <>
+            <PredictionCardSkeleton />
+            <PredictionCardSkeleton />
+            <PredictionCardSkeleton />
+          </>
+        ) : displayPredictions && displayPredictions.length > 0 ? (
+          <>
+            {console.log(`[PredictionsScreen] Rendering ${displayPredictions.length} predictions`)}
+            {displayPredictions.map((prediction, index) => {
+              console.log(`  ${index}: game_id=${prediction.game_id}, ${prediction.away_team} @ ${prediction.home_team}`);
+              return (
+                <DetailedPredictionCard
+                  key={prediction.game_id || `pred-${index}`}
+                  prediction={prediction}
+                  colors={colors}
+                  styles={styles}
+                />
+              );
+            })}
+          </>
         ) : (
-          <View style={styles.emptyState}>
-            <Icon name="football" size={64} color={colors.placeholder} />
-            <Text style={styles.emptyText}>
-              {viewMode === 'weekly' ? `No games for Week ${currentWeek}` : 'No predictions available'}
-            </Text>
-            <Text style={styles.emptySubtext}>
-              {viewMode === 'weekly'
-                ? 'Try navigating to a different week'
-                : 'Check back later for upcoming games'}
-            </Text>
-          </View>
+          <EmptyState
+            title={viewMode === 'weekly' ? `No Games for Week ${currentWeek}` : 'No Predictions Available'}
+            message={viewMode === 'weekly'
+              ? 'Games for this week haven\'t been scheduled yet. Try navigating to a different week.'
+              : 'Check back later for upcoming game predictions.'}
+            icon="football"
+          />
         )}
       </ScrollView>
     </View>
   );
 }
 
-function FilterChip({ label, active, onPress }) {
+function FilterChip({ label, active, onPress, styles }) {
   return (
     <TouchableOpacity
       style={[styles.filterChip, active && styles.filterChipActive]}
@@ -214,8 +213,18 @@ function FilterChip({ label, active, onPress }) {
   );
 }
 
-function DetailedPredictionCard({ prediction }) {
-  const confidence = prediction.confidence || 0.5;
+function DetailedPredictionCard({ prediction, colors, styles }) {
+  console.log(`[DetailedPredictionCard] Rendering game ${prediction.game_id}:`, {
+    home: prediction.home_team,
+    away: prediction.away_team,
+    predicted_winner: prediction.predicted_winner,
+    confidence: prediction.confidence,
+    predicted_score: prediction.predicted_score,
+    home_logo: !!prediction.home_team_logo,
+    away_logo: !!prediction.away_team_logo
+  });
+
+  const confidence = parseFloat(prediction.confidence) || 0.5;
   const confidenceColor = confidence > 0.7 ? colors.success :
                          confidence > 0.55 ? colors.warning : colors.placeholder;
 
@@ -249,7 +258,17 @@ function DetailedPredictionCard({ prediction }) {
       {/* Teams */}
       <View style={styles.teamsContainer}>
         <View style={styles.team}>
-          <Text style={styles.teamEmoji}>🏈</Text>
+          {prediction.home_team_logo ? (
+            <View style={styles.logoContainer}>
+              <Image
+                source={{ uri: prediction.home_team_logo }}
+                style={styles.teamLogoImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : (
+            <Text style={styles.teamEmoji}>🏈</Text>
+          )}
           <Text style={styles.teamName}>{prediction.home_team}</Text>
           <Text style={styles.teamScore}>{prediction.predicted_score?.home || '-'}</Text>
         </View>
@@ -259,7 +278,17 @@ function DetailedPredictionCard({ prediction }) {
         </View>
 
         <View style={styles.team}>
-          <Text style={styles.teamEmoji}>🏈</Text>
+          {prediction.away_team_logo ? (
+            <View style={styles.logoContainer}>
+              <Image
+                source={{ uri: prediction.away_team_logo }}
+                style={styles.teamLogoImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : (
+            <Text style={styles.teamEmoji}>🏈</Text>
+          )}
           <Text style={styles.teamName}>{prediction.away_team}</Text>
           <Text style={styles.teamScore}>{prediction.predicted_score?.away || '-'}</Text>
         </View>
@@ -275,22 +304,26 @@ function DetailedPredictionCard({ prediction }) {
           </Text>
         </View>
 
-        <View style={styles.detailRow}>
-          <Icon name="chart-timeline-variant" size={16} color={colors.primary} />
-          <Text style={styles.detailLabel}>Spread:</Text>
-          <Text style={styles.detailValue}>
-            {prediction.spread_prediction >= 0 ? '+' : ''}
-            {prediction.spread_prediction}
-          </Text>
-        </View>
+        {prediction.spread_prediction != null && (
+          <View style={styles.detailRow}>
+            <Icon name="chart-timeline-variant" size={16} color={colors.primary} />
+            <Text style={styles.detailLabel}>Spread:</Text>
+            <Text style={styles.detailValue}>
+              {prediction.spread_prediction >= 0 ? '+' : ''}
+              {prediction.spread_prediction}
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.detailRow}>
-          <Icon name="sigma" size={16} color={colors.primary} />
-          <Text style={styles.detailLabel}>O/U:</Text>
-          <Text style={styles.detailValue}>
-            {prediction.over_under_prediction}
-          </Text>
-        </View>
+        {prediction.over_under_prediction != null && (
+          <View style={styles.detailRow}>
+            <Icon name="sigma" size={16} color={colors.primary} />
+            <Text style={styles.detailLabel}>O/U:</Text>
+            <Text style={styles.detailValue}>
+              {prediction.over_under_prediction}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Key Factors */}
@@ -309,7 +342,7 @@ function DetailedPredictionCard({ prediction }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -378,8 +411,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     margin: spacing.lg,
-    padding: spacing.md,
-    borderRadius: 12,
+    padding: spacing.lg,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -413,13 +453,29 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginBottom: spacing.sm,
   },
+  logoContainer: {
+    width: 60,
+    height: 60,
+    marginBottom: spacing.sm,
+    backgroundColor: '#ffffff',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 6,
+  },
+  teamLogoImage: {
+    width: '100%',
+    height: '100%',
+  },
   teamName: {
     ...typography.body,
+    color: colors.text,
     fontWeight: '600',
     textAlign: 'center',
   },
   teamScore: {
     ...typography.h2,
+    color: colors.text,
     marginTop: spacing.sm,
   },
   divider: {
@@ -478,6 +534,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     ...typography.h3,
+    color: colors.text,
     marginTop: spacing.md,
   },
   emptySubtext: {
