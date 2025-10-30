@@ -102,6 +102,11 @@ exports.getUpcomingPredictions = async (req, res, next) => {
       await redis.setEx(cacheKey, 1800, JSON.stringify(predictions));
     }
 
+    // Disable caching to ensure fresh logo URLs
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     res.json({
       success: true,
       data: predictions,
@@ -257,6 +262,11 @@ exports.getWeeklyPredictions = async (req, res, next) => {
 
       logger.info(`Database fallback for Week ${week} returned ${predictions.length} predictions`);
     }
+
+    // Disable caching to ensure fresh logo URLs
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
 
     res.json({
       success: true,
