@@ -30,26 +30,89 @@ exports.getUpcomingPredictions = async (req, res, next) => {
       }
     }
 
-    // Call ML service
-    const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/upcoming`, {
-      timeout: 10000
-    });
+    let predictions = null;
+    let mlServiceAvailable = false;
 
-    const predictions = mlResponse.data;
+    // Try ML service first
+    try {
+      const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/upcoming`, {
+        timeout: 5000 // Reduced timeout
+      });
+      predictions = mlResponse.data;
+      mlServiceAvailable = true;
+    } catch (mlError) {
+      // ML service unavailable, log and fallback to database
+      logger.warn('ML service unavailable, falling back to database predictions');
+      
+      // Fallback: Get predictions from database for upcoming games
+      const pool = getPostgresPool();
+      let result = await pool.query(
+        `SELECT
+          p.game_id, p.predicted_winner, p.confidence, p.created_at,
+          p.predicted_home_score, p.predicted_away_score,
+          p.spread_prediction, p.over_under_prediction,
+          g.home_team, g.away_team, g.game_date, g.week, g.season,
+          g.home_score, g.away_score,
+          g.home_team_logo, g.away_team_logo,
+          g.home_abbreviation, g.away_abbreviation
+        FROM predictions p
+        JOIN games g ON p.game_id = g.id
+        WHERE g.game_date > NOW()
+        ORDER BY g.game_date ASC
+        LIMIT 10`
+      );
+
+      // If no future games, get the most recent week's predictions
+      if (result.rows.length === 0) {
+        logger.info('No upcoming games found, fetching most recent week');
+        result = await pool.query(
+          `SELECT
+            p.game_id, p.predicted_winner, p.confidence, p.created_at,
+            p.predicted_home_score, p.predicted_away_score,
+            p.spread_prediction, p.over_under_prediction,
+            g.home_team, g.away_team, g.game_date, g.week, g.season,
+            g.home_score, g.away_score,
+            g.home_team_logo, g.away_team_logo,
+            g.home_abbreviation, g.away_abbreviation
+          FROM predictions p
+          JOIN games g ON p.game_id = g.id
+          WHERE g.season = 2025
+          ORDER BY g.week DESC, g.game_date DESC
+          LIMIT 15`
+        );
+      }
+
+      predictions = result.rows.length > 0 ? result.rows.map(p => ({
+        ...p,
+        predicted_score: {
+          home: p.predicted_home_score,
+          away: p.predicted_away_score
+        }
+      })) : [];
+      logger.info(`Database fallback returned ${predictions.length} predictions`);
+    }
 
     // Cache for 30 minutes (if Redis is available)
-    if (redis) {
+    if (redis && predictions) {
       await redis.setEx(cacheKey, 1800, JSON.stringify(predictions));
     }
 
     res.json({
       success: true,
       data: predictions,
-      cached: false
+      cached: false,
+      mlServiceAvailable
     });
   } catch (error) {
     logger.error('Error fetching upcoming predictions:', error);
-    next(new AppError('Failed to fetch predictions', 500));
+    
+    // Return empty array instead of error to keep app functional
+    res.json({
+      success: true,
+      data: [],
+      message: 'Predictions are currently unavailable. Please check back later.',
+      mlServiceAvailable: false
+    });
   }
 };
 
@@ -78,46 +141,125 @@ exports.getGamePrediction = async (req, res, next) => {
       }
     }
 
-    // Call ML service
-    const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/game/${gameId}`, {
-      timeout: 10000
-    });
+    let prediction = null;
+    let mlServiceAvailable = false;
 
-    const prediction = mlResponse.data;
+    // Try ML service first
+    try {
+      const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/game/${gameId}`, {
+        timeout: 5000
+      });
+      prediction = mlResponse.data;
+      mlServiceAvailable = true;
+    } catch (mlError) {
+      logger.warn(`ML service unavailable for game ${gameId}, falling back to database`);
+      
+      // Fallback to database
+      const pool = getPostgresPool();
+      const result = await pool.query(
+        `SELECT 
+          p.game_id, p.predicted_winner, p.confidence, p.created_at,
+          g.home_team, g.away_team, g.game_date, g.week, g.season,
+          g.home_score, g.away_score
+        FROM predictions p
+        JOIN games g ON p.game_id = g.id
+        WHERE p.game_id = $1
+        ORDER BY p.created_at DESC
+        LIMIT 1`,
+        [gameId]
+      );
+      
+      prediction = result.rows[0] || null;
+    }
 
     // Cache for 15 minutes (if Redis is available)
-    if (redis) {
+    if (redis && prediction) {
       await redis.setEx(cacheKey, 900, JSON.stringify(prediction));
     }
 
     res.json({
       success: true,
       data: prediction,
-      cached: false
+      cached: false,
+      mlServiceAvailable
     });
   } catch (error) {
     logger.error(`Error fetching game ${req.params.gameId} prediction:`, error);
-    next(new AppError('Failed to fetch game prediction', 500));
+    res.json({
+      success: true,
+      data: null,
+      message: 'Prediction not available for this game',
+      mlServiceAvailable: false
+    });
   }
 };
 
 // Get weekly predictions
 exports.getWeeklyPredictions = async (req, res, next) => {
   try {
-    const { week, season } = req.query;
+    const week = parseInt(req.query.week);
+    const season = parseInt(req.query.season);
 
-    const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/weekly`, {
-      params: { week, season },
-      timeout: 10000
-    });
+    let predictions = null;
+    let mlServiceAvailable = false;
+
+    // Try ML service first
+    try {
+      const mlResponse = await axios.get(`${ML_SERVICE_URL}/api/predictions/weekly`, {
+        params: { week, season },
+        timeout: 5000
+      });
+      predictions = mlResponse.data;
+      mlServiceAvailable = true;
+    } catch (mlError) {
+      logger.warn(`ML service unavailable for week ${week} season ${season}, falling back to database`);
+      logger.info(`Query parameters - week: ${week} (type: ${typeof week}), season: ${season} (type: ${typeof season})`);
+
+      // Fallback to database
+      const pool = getPostgresPool();
+
+      const result = await pool.query(
+        `SELECT
+          p.game_id, p.predicted_winner, p.confidence, p.created_at,
+          p.predicted_home_score, p.predicted_away_score,
+          p.spread_prediction, p.over_under_prediction,
+          g.home_team, g.away_team, g.game_date, g.week, g.season,
+          g.home_score, g.away_score,
+          g.home_team_logo, g.away_team_logo,
+          g.home_abbreviation, g.away_abbreviation
+        FROM predictions p
+        JOIN games g ON p.game_id = g.id
+        WHERE g.week = $1 AND g.season = $2
+        ORDER BY g.game_date ASC`,
+        [week, season]
+      );
+      logger.info(`Query result: ${result.rows.length} rows`);
+      
+      predictions = result.rows.map(p => ({
+        ...p,
+        // Transform predicted scores into the format UI expects
+        predicted_score: {
+          home: p.predicted_home_score,
+          away: p.predicted_away_score
+        }
+      }));
+
+      logger.info(`Database fallback for Week ${week} returned ${predictions.length} predictions`);
+    }
 
     res.json({
       success: true,
-      data: mlResponse.data
+      data: predictions || [],
+      mlServiceAvailable
     });
   } catch (error) {
     logger.error('Error fetching weekly predictions:', error);
-    next(new AppError('Failed to fetch weekly predictions', 500));
+    res.json({
+      success: true,
+      data: [],
+      message: 'Weekly predictions are currently unavailable',
+      mlServiceAvailable: false
+    });
   }
 };
 
