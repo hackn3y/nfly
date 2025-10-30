@@ -40,17 +40,44 @@ exports.getUpcomingPredictions = async (req, res, next) => {
       });
       predictions = mlResponse.data;
 
-      // Add logo URLs to ML service response
-      if (Array.isArray(predictions)) {
-        predictions = predictions.map(p => ({
-          ...p,
-          home_team_logo: (p.home_abbreviation || p.home_abbr)
-            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.home_abbreviation || p.home_abbr).toLowerCase()}.png`
-            : null,
-          away_team_logo: (p.away_abbreviation || p.away_abbr)
-            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.away_abbreviation || p.away_abbr).toLowerCase()}.png`
-            : null
-        }));
+      // ML service doesn't have abbreviations, so fetch them from our database
+      if (Array.isArray(predictions) && predictions.length > 0) {
+        const pool = getPostgresPool();
+        const gameIds = predictions.map(p => p.game_id).filter(id => id);
+
+        if (gameIds.length > 0) {
+          const abbrevResult = await pool.query(
+            `SELECT id, home_abbreviation, away_abbreviation
+             FROM games
+             WHERE id = ANY($1)`,
+            [gameIds]
+          );
+
+          // Create a map of game_id to abbreviations
+          const abbrevMap = {};
+          abbrevResult.rows.forEach(row => {
+            abbrevMap[row.id] = {
+              home: row.home_abbreviation,
+              away: row.away_abbreviation
+            };
+          });
+
+          // Add abbreviations and logo URLs to predictions
+          predictions = predictions.map(p => {
+            const abbrevs = abbrevMap[p.game_id] || {};
+            return {
+              ...p,
+              home_abbreviation: abbrevs.home,
+              away_abbreviation: abbrevs.away,
+              home_team_logo: abbrevs.home
+                ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${abbrevs.home.toLowerCase()}.png`
+                : null,
+              away_team_logo: abbrevs.away
+                ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${abbrevs.away.toLowerCase()}.png`
+                : null
+            };
+          });
+        }
       }
 
       mlServiceAvailable = true;
@@ -235,17 +262,44 @@ exports.getWeeklyPredictions = async (req, res, next) => {
       });
       predictions = mlResponse.data;
 
-      // Add logo URLs to ML service response
-      if (Array.isArray(predictions)) {
-        predictions = predictions.map(p => ({
-          ...p,
-          home_team_logo: (p.home_abbreviation || p.home_abbr)
-            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.home_abbreviation || p.home_abbr).toLowerCase()}.png`
-            : null,
-          away_team_logo: (p.away_abbreviation || p.away_abbr)
-            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.away_abbreviation || p.away_abbr).toLowerCase()}.png`
-            : null
-        }));
+      // ML service doesn't have abbreviations, so fetch them from our database
+      if (Array.isArray(predictions) && predictions.length > 0) {
+        const pool = getPostgresPool();
+        const gameIds = predictions.map(p => p.game_id).filter(id => id);
+
+        if (gameIds.length > 0) {
+          const abbrevResult = await pool.query(
+            `SELECT id, home_abbreviation, away_abbreviation
+             FROM games
+             WHERE id = ANY($1)`,
+            [gameIds]
+          );
+
+          // Create a map of game_id to abbreviations
+          const abbrevMap = {};
+          abbrevResult.rows.forEach(row => {
+            abbrevMap[row.id] = {
+              home: row.home_abbreviation,
+              away: row.away_abbreviation
+            };
+          });
+
+          // Add abbreviations and logo URLs to predictions
+          predictions = predictions.map(p => {
+            const abbrevs = abbrevMap[p.game_id] || {};
+            return {
+              ...p,
+              home_abbreviation: abbrevs.home,
+              away_abbreviation: abbrevs.away,
+              home_team_logo: abbrevs.home
+                ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${abbrevs.home.toLowerCase()}.png`
+                : null,
+              away_team_logo: abbrevs.away
+                ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${abbrevs.away.toLowerCase()}.png`
+                : null
+            };
+          });
+        }
       }
 
       mlServiceAvailable = true;
