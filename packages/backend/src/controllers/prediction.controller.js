@@ -39,6 +39,20 @@ exports.getUpcomingPredictions = async (req, res, next) => {
         timeout: 5000 // Reduced timeout
       });
       predictions = mlResponse.data;
+
+      // Add logo URLs to ML service response
+      if (Array.isArray(predictions)) {
+        predictions = predictions.map(p => ({
+          ...p,
+          home_team_logo: (p.home_abbreviation || p.home_abbr)
+            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.home_abbreviation || p.home_abbr).toLowerCase()}.png`
+            : null,
+          away_team_logo: (p.away_abbreviation || p.away_abbr)
+            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.away_abbreviation || p.away_abbr).toLowerCase()}.png`
+            : null
+        }));
+      }
+
       mlServiceAvailable = true;
     } catch (mlError) {
       // ML service unavailable, log and fallback to database
@@ -220,6 +234,20 @@ exports.getWeeklyPredictions = async (req, res, next) => {
         timeout: 5000
       });
       predictions = mlResponse.data;
+
+      // Add logo URLs to ML service response
+      if (Array.isArray(predictions)) {
+        predictions = predictions.map(p => ({
+          ...p,
+          home_team_logo: (p.home_abbreviation || p.home_abbr)
+            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.home_abbreviation || p.home_abbr).toLowerCase()}.png`
+            : null,
+          away_team_logo: (p.away_abbreviation || p.away_abbr)
+            ? `https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/${(p.away_abbreviation || p.away_abbr).toLowerCase()}.png`
+            : null
+        }));
+      }
+
       mlServiceAvailable = true;
     } catch (mlError) {
       logger.warn(`ML service unavailable for week ${week} season ${season}, falling back to database`);
